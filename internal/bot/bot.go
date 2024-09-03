@@ -9,27 +9,87 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func Start() error {
-	session, err := discordgo.New("Bot -")
+var (
+	AuthToken             string
+	GuildID               string
+	AppID                 string
+	Slug                  string
+	templateInviteMessage = `
+	Турнир: %v
+	Следующий оппонент: %v
+	Tekken ID: %v
+	Дискорд: <@%v>
+	Ссылка на check-in: %v
+	
+	*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*
+	`
+)
+
+func SetAuthToken(token string) {
+	AuthToken = token
+}
+
+func SetServerID(guildID string) {
+	GuildID = guildID
+}
+
+func SetAppID(appID string) {
+	AppID = appID
+}
+
+func SetSlug(slug string) {
+	Slug = slug
+}
+
+func slug() bool {
+	return len(Slug) > 0
+}
+
+func server() bool {
+	return len(GuildID) > 0
+}
+
+func app() bool {
+	return len(AppID) > 0
+}
+
+func Start() {
+	session, err := discordgo.New(AuthToken)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
 
-	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.ID == s.State.User.ID {
-			return
-		}
+	session, err = SetCommands(AppID, GuildID, session)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-		if m.Content == "hello" {
-			s.ChannelMessageSend(m.ChannelID, "world!")
-		}
+	session.AddHandler(func(
+		s *discordgo.Session,
+		m *discordgo.MessageCreate,
+	) {
+		sendMessage(s, m)
+	})
+
+	session.AddHandler(func(
+		s *discordgo.Session,
+		i *discordgo.InteractionCreate,
+	) {
+		handlerCommands(s, i)
+	})
+
+	session.AddHandler(func(
+		s *discordgo.Session,
+		m *discordgo.MessageCreate,
+	) {
+		handlerInputs(s, m)
 	})
 
 	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
 	err = session.Open()
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
 
 	defer session.Close()
@@ -38,6 +98,7 @@ func Start() error {
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	<-sc
 
-	return nil
+	session.Close()
 }

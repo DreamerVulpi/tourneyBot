@@ -1,24 +1,50 @@
 package startgg
 
 const (
-	getEvent = `
-	query getEvent($slug: String) {
+	GetListPhaseGroups = `
+	query getListPhaseGroups($slug: String) {
 		event(slug: $slug) {
 			id
 			name
+			phaseGroups {
+				id
+			}
 		}
 	},
 	`
-	getPhaseGroupState = `
-	query PhaseGroupState($phaseGroupId: ID!){
+	// TODO: GETPAGESCOUNT
+	GetPagesCount = `
+	query getPagesCount($phaseGroupId: ID!){
+		phaseGroup(id:$phaseGroupId){
+			id
+			sets {
+				pageInfo{
+					total
+				}
+			}
+		}
+	}
+		`
+
+	// TODO: WINNER FUNCTION
+	GetWinner = `
+	query getWinner($setId: ID!){
+		set(id:$setId) {
+			winnerId
+		}
+	}
+	`
+
+	GetPhaseGroupState = `
+	query getPhaseGroupState($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){
 			id
 			state
 		}
 	}`
 
-	getPhaseGroupSets = `
-	query PhaseGroupSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
+	GetPhaseGroupSets = `
+	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){
 			id
 			sets(
@@ -32,6 +58,9 @@ const (
 			nodes{
 					id
 					state
+					stream {
+						streamSource
+					}
 					slots{
 						entrant{
 							id

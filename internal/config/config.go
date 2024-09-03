@@ -7,7 +7,9 @@ type ConfigStartGG struct {
 }
 
 type ConfigDiscordBot struct {
-	Token string `toml:"token"`
+	Token   string `toml:"token"`
+	GuildID string `toml:"guildID"`
+	AppID   string `toml:"appID"`
 }
 
 type Config struct {

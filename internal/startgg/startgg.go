@@ -20,18 +20,18 @@ func SetAuthToken(token string) {
 	AuthToken = token
 }
 
-func token() bool {
+func Token() bool {
 	return len(AuthToken) > 0
 }
 
-func prepareQuery(query string, variables map[string]interface{}) map[string]interface{} {
+func PrepareQuery(query string, variables map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		"query":     query,
 		"variables": variables,
 	}
 }
 
-func runQuery(query []byte) ([]byte, error) {
+func RunQuery(query []byte) ([]byte, error) {
 	// Creates the POST request and checks for errors.
 	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
 	if err != nil {
