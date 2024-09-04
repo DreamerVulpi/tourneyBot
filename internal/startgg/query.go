@@ -12,7 +12,6 @@ const (
 		}
 	},
 	`
-	// TODO: GETPAGESCOUNT
 	GetPagesCount = `
 	query getPagesCount($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){

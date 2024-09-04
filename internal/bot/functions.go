@@ -47,7 +47,6 @@ func searchContactDiscord(s *discordgo.Session, nickname string) (string, error)
 }
 
 func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-
 	channel, err := s.UserChannelCreate(SendData.discordID)
 	if err != nil {
 		fmt.Println("error creating channel:", err)
@@ -59,7 +58,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	link := fmt.Sprint("https://www.start.gg/", "tournament/wild-hunters-1/event/main-online-crossplatform-event", "/set/", SendData.setID)
-	invite := fmt.Sprintf(templateInviteMessage, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
+	invite := fmt.Sprintf(TemplateInviteMessage, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
 	if err != nil {

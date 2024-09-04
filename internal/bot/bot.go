@@ -1,10 +1,10 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -14,27 +14,23 @@ var (
 	GuildID               string
 	AppID                 string
 	Slug                  string
-	templateInviteMessage = `
-	Турнир: %v
-	Следующий оппонент: %v
-	Tekken ID: %v
-	Дискорд: <@%v>
-	Ссылка на check-in: %v
-	
-	*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*
-	`
+	TemplateInviteMessage string
 )
 
 func SetAuthToken(token string) {
 	AuthToken = token
 }
 
-func SetServerID(guildID string) {
-	GuildID = guildID
+func SetGuildID(id string) {
+	GuildID = id
 }
 
-func SetAppID(appID string) {
-	AppID = appID
+func SetAppID(id string) {
+	AppID = id
+}
+
+func SetTemplateInviteMessage(template string) {
+	TemplateInviteMessage = template
 }
 
 func SetSlug(slug string) {
@@ -53,52 +49,60 @@ func app() bool {
 	return len(AppID) > 0
 }
 
-func Start() {
+func token() bool {
+	return len(AuthToken) > 0
+}
+
+func Start() error {
+	if !app() {
+		return errors.New("appID is empty")
+	}
+
+	if !server() {
+		return errors.New("serverID(guildID) is empty")
+	}
+
+	if !token() {
+		return errors.New("authToken is empty")
+	}
+
 	session, err := discordgo.New(AuthToken)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
-	session, err = SetCommands(AppID, GuildID, session)
+	err = session.Open()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-
-	session.AddHandler(func(
-		s *discordgo.Session,
-		m *discordgo.MessageCreate,
-	) {
-		sendMessage(s, m)
-	})
 
 	session.AddHandler(func(
 		s *discordgo.Session,
 		i *discordgo.InteractionCreate,
 	) {
-		handlerCommands(s, i)
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
 	})
 
-	session.AddHandler(func(
-		s *discordgo.Session,
-		m *discordgo.MessageCreate,
-	) {
-		handlerInputs(s, m)
-	})
-
-	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
-
-	err = session.Open()
-	if err != nil {
-		fmt.Println(err)
+	for _, command := range commands {
+		_, err := session.ApplicationCommandCreate(AppID, GuildID, command)
+		if err != nil {
+			fmt.Printf("can't create '%v' command: %v\n", command.Name, err)
+		}
 	}
 
 	defer session.Close()
 
 	fmt.Println("the bot is online!")
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	fmt.Println("press Ctrl+C to exit")
+	<-stop
 
-	session.Close()
+	// TODO: Add functional for deleting commands
+
+	fmt.Println("gracefully shutting down.")
+	return nil
 }
