@@ -51,22 +51,27 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 	}
 }
 func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	fmt.Printf("1111111111")
-	cmd.stop <- struct{}{}
-	fmt.Printf("2222222222")
-	err := s.InteractionRespond(
-		i.Interaction,
-		&discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Stopped",
+	go func() {
+		err := s.InteractionRespond(
+			i.Interaction,
+			&discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Stopping...",
+				},
 			},
-		},
-	)
+		)
 
-	if err != nil {
-		log.Println(errors.New("can't respond on message"))
-	}
+		if err != nil {
+			log.Println(errors.New("can't respond on message"))
+		}
+	}()
+
+	// Send signal to stop sending messages
+	cmd.stop <- struct{}{}
+
+	s.ChannelMessageSend(i.ChannelID, "Stopped!")
+
 }
 func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()

@@ -1,6 +1,10 @@
 package config
 
-import "github.com/ilyakaznacheev/cleanenv"
+import (
+	"errors"
+
+	"github.com/ilyakaznacheev/cleanenv"
+)
 
 type ConfigStartGG struct {
 	Token string `toml:"token"`
@@ -24,5 +28,17 @@ func LoadConfig(file string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return cfg, nil
+
+	switch {
+	case len(cfg.Startgg.Token) == 0:
+		return Config{}, errors.New("startGG token is empty")
+	case len(cfg.Discord.Token) == 0:
+		return Config{}, errors.New("discord token is empty")
+	case len(cfg.Discord.AppID) == 0:
+		return Config{}, errors.New("discord appID is empty")
+	case len(cfg.Discord.GuildID) == 0:
+		return Config{}, errors.New("discord guildID is empty")
+	default:
+		return cfg, nil
+	}
 }

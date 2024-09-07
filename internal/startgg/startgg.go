@@ -3,6 +3,7 @@ package startgg
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,12 +37,10 @@ func PrepareQuery(query string, variables map[string]interface{}) map[string]int
 }
 
 func (c *Client) RunQuery(query []byte) ([]byte, error) {
-	// TODO: CHECK TOKEN
-
 	// Creates the POST request and checks for errors.
 	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
 	if err != nil {
-		return nil, fmt.Errorf("HTTP Request - %w", err)
+		return nil, errors.Join(errors.New("HTTP Request - "), err)
 	}
 
 	// Sets the headers within the request.
@@ -51,30 +50,33 @@ func (c *Client) RunQuery(query []byte) ([]byte, error) {
 	// Sends the request and receives the response of it.
 	res, err := c.Client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP Response - %w", err)
+		return nil, errors.Join(errors.New("HTTP Response - "), err)
 	}
 	defer res.Body.Close()
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read data - %w", err)
+		return nil, errors.Join(errors.New("read Data - "), err)
 	}
 
-	validation := validateData(data)
+	validation, err := validateData(data)
+	if err != nil {
+		return nil, err
+	}
 	if validation != "" {
-		return nil, fmt.Errorf("data validation - %s", validation)
+		return nil, errors.Join(errors.New("data Validation - "), err)
 	}
 
 	return data, nil
 }
 
-func validateData(data []byte) string {
+func validateData(data []byte) (string, error) {
 	results := &FailedCall{}
 
 	err := json.Unmarshal(data, results)
 	if err != nil {
-		return "Unable To Validate Data"
+		return "", errors.New("unable To Validate Data")
 	}
 
-	return results.Message
+	return results.Message, nil
 }

@@ -23,9 +23,6 @@ type opponentData struct {
 }
 
 func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (string, error) {
-	// if !server() {
-	// 	return "", errors.New("server ID is empty")
-	// }
 	user, err := s.GuildMembersSearch(c.guildID, nickname, 1)
 	if err != nil {
 		return "", err
@@ -75,8 +72,6 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 }
 
 func (c *commandHandler) SendProcess(s *discordgo.Session) error {
-
-	// phaseGroups, err := startgg.GetListPhaseGroups(Slug)
 	phaseGroups, err := c.client.GetListGroups(c.slug)
 	if err != nil {
 		return err
@@ -136,8 +131,6 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 					},
 				}
 
-				// log.Printf("player 1 | Discord: ", player1Discord)
-
 				c.sendMessage(s, toPlayer1)
 
 				toPlayer2 := playerData{
@@ -155,16 +148,6 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 				c.sendMessage(s, toPlayer2)
 
 				fmt.Println("sended messages..")
-				// fmt.Println(player1.User.ID)
-				// fmt.Println("player 1 | ID: ", set.Slots[0].Entrant.Id)
-				// fmt.Println("player 1 | Nickname: ", set.Slots[0].Entrant.Participants[0].GamerTag)
-				// fmt.Println("player 1 | TEKKEN ID ", set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID)
-				// fmt.Println("player 1 | Discord: ", set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
-
-				// fmt.Println("player 2 | ID: ", set.Slots[1].Entrant.Id)
-				// fmt.Println("player 2 | Nickname: ", set.Slots[1].Entrant.Participants[0].GamerTag)
-				// fmt.Println("player 2 | TEKKEN ID ", set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID)
-				// fmt.Println("player 2 | Discord: ", set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
 			}
 			if err != nil {
 				fmt.Println(errors.New("error get sets"))

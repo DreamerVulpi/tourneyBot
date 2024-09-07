@@ -13,8 +13,6 @@ import (
 )
 
 func Start(cfg config.Config) error {
-	// TODO: check variables
-
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
