@@ -16,10 +16,6 @@ func main() {
 	}
 
 	startgg.AuthToken = cfg.Startgg.Token
-	bot.AuthToken = cfg.Discord.Token
 
-	bot.SetAuthToken(cfg.Discord.Token)
-	bot.SetGuildID(cfg.Discord.GuildID)
-	bot.SetAppID(cfg.Discord.AppID)
-	bot.Start()
+	bot.Start(cfg)
 }

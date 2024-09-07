@@ -34,11 +34,11 @@ const (
 	IsDone       State = 3
 )
 
-func searchContactDiscord(s *discordgo.Session, nickname string) (string, error) {
-	if !server() {
-		return "", errors.New("server ID is empty")
-	}
-	user, err := s.GuildMembersSearch(GuildID, nickname, 1)
+func searchContactDiscord(s *discordgo.Session, nickname, guildID string) (string, error) {
+	// if !server() {
+	// 	return "", errors.New("server ID is empty")
+	// }
+	user, err := s.GuildMembersSearch(guildID, nickname, 1)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +70,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}) error {
+func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID string) error {
 	for {
 		select {
 		case <-stop:
@@ -78,7 +78,7 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 			return nil
 		default:
 			fmt.Println("Start sending messages...")
-			if err := SendProcess(s, m); err != nil {
+			if err := SendProcess(s, m, guildID); err != nil {
 				return err
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -86,7 +86,7 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 	}
 }
 
-func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
+func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID string) error {
 	if !slug() {
 		return errors.New("slug data is empty")
 	}
@@ -138,8 +138,8 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
 				// player1Discord, _ := searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
 				// player2Discord, _ := searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
 
-				dv, _ := searchContactDiscord(s, "DreamerVulpi")
-				fcuk, _ := searchContactDiscord(s, "fcuk_limit")
+				dv, _ := searchContactDiscord(s, "DreamerVulpi", guildID)
+				fcuk, _ := searchContactDiscord(s, "fcuk_limit", guildID)
 
 				toPlayer1 := player{
 					setID:     set.Id,

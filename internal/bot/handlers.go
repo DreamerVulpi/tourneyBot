@@ -9,11 +9,12 @@ import (
 )
 
 type commandHandler struct {
-	stop chan struct{}
+	guildID string
+	stop    chan struct{}
 }
 
 func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	respond := fmt.Sprint("server(Guild) ID: " + GuildID + "\n" + "slug: " + Slug + "\n" + "templateInviteMessage: \n" + TemplateInviteMessage)
+	respond := fmt.Sprint("server(Guild) ID: " + cmd.guildID + "\n" + "slug: " + Slug + "\n" + "templateInviteMessage: \n" + TemplateInviteMessage)
 	err := s.InteractionRespond(
 		i.Interaction,
 		&discordgo.InteractionResponse{
@@ -39,7 +40,7 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 	)
 
 	var m *discordgo.MessageCreate
-	go SendingMessages(s, m, cmd.stop)
+	go SendingMessages(s, m, cmd.stop, cmd.guildID)
 
 	if err != nil {
 		log.Println(errors.New("can't respond on message"))
@@ -66,12 +67,13 @@ func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.Inter
 func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
 
+	cmd.guildID = input
+
 	margs := make([]interface{}, 0, len(input))
 	msgformat := ""
 
 	margs = append(margs, input)
 	msgformat += "> GuildID: %s\n"
-	SetGuildID(input)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

@@ -1,33 +1,18 @@
 package bot
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dreamervulpi/tourneybot/config"
 )
 
 var (
-	AuthToken             string
-	GuildID               string
-	AppID                 string
 	Slug                  string
 	TemplateInviteMessage string
 )
-
-func SetAuthToken(token string) {
-	AuthToken = token
-}
-
-func SetGuildID(id string) {
-	GuildID = id
-}
-
-func SetAppID(id string) {
-	AppID = id
-}
 
 func SetTemplateInviteMessage(template string) {
 	TemplateInviteMessage = template
@@ -41,32 +26,20 @@ func slug() bool {
 	return len(Slug) > 0
 }
 
-func server() bool {
-	return len(GuildID) > 0
-}
+func Start(cfg config.Config) error {
+	// if !len(cfg.Discord.AppID) > 0 {
+	// 	return errors.New("appID is empty")
+	// }
 
-func app() bool {
-	return len(AppID) > 0
-}
+	// if !server() {
+	// 	return errors.New("serverID(guildID) is empty")
+	// }
 
-func token() bool {
-	return len(AuthToken) > 0
-}
+	// if !token() {
+	// 	return errors.New("authToken is empty")
+	// }
 
-func Start() error {
-	if !app() {
-		return errors.New("appID is empty")
-	}
-
-	if !server() {
-		return errors.New("serverID(guildID) is empty")
-	}
-
-	if !token() {
-		return errors.New("authToken is empty")
-	}
-
-	session, err := discordgo.New(AuthToken)
+	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
 	}
@@ -79,7 +52,8 @@ func Start() error {
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 
 	cmdHandler := commandHandler{
-		stop: make(chan struct{}),
+		guildID: cfg.Discord.GuildID,
+		stop:    make(chan struct{}),
 	}
 
 	commandHandlers["check"] = cmdHandler.check
@@ -101,7 +75,7 @@ func Start() error {
 	fmt.Println("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
-		cmd, err := session.ApplicationCommandCreate(AppID, GuildID, command)
+		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)
 		if err != nil {
 			fmt.Printf("can't create '%v' command: %v\n", command.Name, err)
 		}
@@ -119,7 +93,7 @@ func Start() error {
 
 	fmt.Println("Removing commands...")
 	for _, v := range registeredCommands {
-		err := session.ApplicationCommandDelete(AppID, GuildID, v.ID)
+		err := session.ApplicationCommandDelete(cfg.Discord.AppID, cfg.Discord.GuildID, v.ID)
 		if err != nil {
 			fmt.Printf("Cannot delete '%v' command: %v", v.Name, err)
 		}
