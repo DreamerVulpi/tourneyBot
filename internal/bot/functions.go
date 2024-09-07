@@ -22,10 +22,6 @@ type opponent struct {
 	tekkenID  string
 }
 
-var (
-	SendData player
-)
-
 type State int
 
 const (
@@ -45,8 +41,8 @@ func searchContactDiscord(s *discordgo.Session, nickname, guildID string) (strin
 	return (*user[0]).User.ID, nil
 }
 
-func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, template string) {
-	channel, err := s.UserChannelCreate(SendData.discordID)
+func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, template string, player player) {
+	channel, err := s.UserChannelCreate(player.discordID)
 	if err != nil {
 		fmt.Println("error creating channel:", err)
 		s.ChannelMessageSend(
@@ -56,8 +52,8 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, templat
 		return
 	}
 
-	link := fmt.Sprint("https://www.start.gg/", slug, "/set/", SendData.setID)
-	invite := fmt.Sprintf(template, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
+	link := fmt.Sprint("https://www.start.gg/", slug, "/set/", player.setID)
+	invite := fmt.Sprintf(template, "турик", player.opponent.nickname, player.opponent.tekkenID, player.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
 	if err != nil {
@@ -150,9 +146,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 				// log.Printf("player 1 | Discord: ", player1Discord)
 
-				SendData = toPlayer1
-
-				sendMessage(s, m, slug, template)
+				sendMessage(s, m, slug, template, toPlayer1)
 
 				toPlayer2 := player{
 					setID:     set.Id,
@@ -166,8 +160,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 				// log.Printf("player 2 | Discord: ", player2Discord)
 
-				SendData = toPlayer2
-				sendMessage(s, m, slug, template)
+				sendMessage(s, m, slug, template, toPlayer2)
 
 				fmt.Println("sended messages..")
 				// fmt.Println(player1.User.ID)
