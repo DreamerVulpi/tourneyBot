@@ -11,10 +11,6 @@ type RawPagesDataCount struct {
 }
 
 func (c *Client) GetPagesCount(phaseGroupID int64) (int, error) {
-	// if !startgg.Token() {
-	// 	return 0, errors.New("token verification - authentication token not set")
-	// }
-
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 	}

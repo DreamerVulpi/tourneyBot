@@ -10,71 +10,63 @@ import (
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
-type player struct {
+type playerData struct {
 	setID     int64
 	discordID string
-	opponent  opponent
+	opponent  opponentData
 }
 
-type opponent struct {
+type opponentData struct {
 	discordID string
 	nickname  string
 	tekkenID  string
 }
 
-type State int
-
-const (
-	IsNotStarted State = 1
-	InProcess    State = 2
-	IsDone       State = 3
-)
-
-func searchContactDiscord(s *discordgo.Session, nickname, guildID string) (string, error) {
+func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (string, error) {
 	// if !server() {
 	// 	return "", errors.New("server ID is empty")
 	// }
-	user, err := s.GuildMembersSearch(guildID, nickname, 1)
+	user, err := s.GuildMembersSearch(c.guildID, nickname, 1)
 	if err != nil {
 		return "", err
 	}
 	return (*user[0]).User.ID, nil
 }
 
-func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, template string, player player) {
+func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	channel, err := s.UserChannelCreate(player.discordID)
 	if err != nil {
 		fmt.Println("error creating channel:", err)
 		s.ChannelMessageSend(
-			m.ChannelID,
+			c.m.ChannelID,
 			"Something went wrong while sending the DM!",
 		)
 		return
 	}
 
-	link := fmt.Sprint("https://www.start.gg/", slug, "/set/", player.setID)
-	invite := fmt.Sprintf(template, "турик", player.opponent.nickname, player.opponent.tekkenID, player.opponent.discordID, link)
+	link := fmt.Sprint("https://www.start.gg/", c.slug, "/set/", player.setID)
+	invite := fmt.Sprintf(c.templateInviteMessage, "турик", player.opponent.nickname, player.opponent.tekkenID, player.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
 	if err != nil {
 		fmt.Println("error sending DM message:", err)
 		s.ChannelMessageSend(
-			m.ChannelID,
+			c.m.ChannelID,
 			"Failed to send you a DM. "+
 				"Did you disable DM in your privacy settings?",
 		)
 	}
 }
 
-func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID, slug, template string, client *startgg.Client) error {
+func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 	for {
 		select {
-		case <-stop:
+		case <-c.stop:
 			fmt.Println("Stopped.")
 			return nil
 		default:
 			fmt.Println("Start sending messages...")
-			if err := SendProcess(s, m, guildID, slug, template, client); err != nil {
+			if err := c.SendProcess(s); err != nil {
 				return err
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -82,10 +74,10 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 	}
 }
 
-func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug, template string, client *startgg.Client) error {
+func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 
 	// phaseGroups, err := startgg.GetListPhaseGroups(Slug)
-	phaseGroups, err := client.GetListGroups(slug)
+	phaseGroups, err := c.client.GetListGroups(c.slug)
 	if err != nil {
 		return err
 	}
@@ -97,13 +89,13 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 	groupId := phaseGroups[0].Id
 
-	state, err := client.GetPhaseGroupState(groupId)
+	state, err := c.client.GetPhaseGroupState(groupId)
 	if err != nil {
 		return err
 	}
 
-	if State(state) == IsDone {
-		total, err := client.GetPagesCount(groupId)
+	if state == startgg.IsDone {
+		total, err := c.client.GetPagesCount(groupId)
 		if err != nil {
 			return err
 		}
@@ -119,7 +111,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 		fmt.Println(total, "/", 60, "=", pages)
 
 		for i := 0; i < pages; i++ {
-			sets, err := client.GetSets(groupId, pages, 60)
+			sets, err := c.client.GetSets(groupId, pages, 60)
 			for _, set := range sets {
 
 				// checkIn := fmt.Sprint("https://www.start.gg/", Slug, "/set/", set.Id)
@@ -131,13 +123,13 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 				// player1Discord, _ := searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
 				// player2Discord, _ := searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
 
-				dv, _ := searchContactDiscord(s, "DreamerVulpi", guildID)
-				fcuk, _ := searchContactDiscord(s, "fcuk_limit", guildID)
+				dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
+				fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
 
-				toPlayer1 := player{
+				toPlayer1 := playerData{
 					setID:     set.Id,
 					discordID: dv,
-					opponent: opponent{
+					opponent: opponentData{
 						discordID: fcuk,
 						nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
 						tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
@@ -146,12 +138,12 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 				// log.Printf("player 1 | Discord: ", player1Discord)
 
-				sendMessage(s, m, slug, template, toPlayer1)
+				c.sendMessage(s, toPlayer1)
 
-				toPlayer2 := player{
+				toPlayer2 := playerData{
 					setID:     set.Id,
 					discordID: dv,
-					opponent: opponent{
+					opponent: opponentData{
 						discordID: fcuk,
 						nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
 						tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
@@ -160,7 +152,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 				// log.Printf("player 2 | Discord: ", player2Discord)
 
-				sendMessage(s, m, slug, template, toPlayer2)
+				c.sendMessage(s, toPlayer2)
 
 				fmt.Println("sended messages..")
 				// fmt.Println(player1.User.ID)

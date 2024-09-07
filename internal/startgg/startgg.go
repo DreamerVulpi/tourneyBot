@@ -8,6 +8,14 @@ import (
 	"net/http"
 )
 
+type State int
+
+const (
+	IsNotStarted State = 1
+	InProcess    State = 2
+	IsDone       State = 3
+)
+
 type Client struct {
 	AuthToken string
 	Client    *http.Client
@@ -28,6 +36,8 @@ func PrepareQuery(query string, variables map[string]interface{}) map[string]int
 }
 
 func (c *Client) RunQuery(query []byte) ([]byte, error) {
+	// TODO: CHECK TOKEN
+
 	// Creates the POST request and checks for errors.
 	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
 	if err != nil {

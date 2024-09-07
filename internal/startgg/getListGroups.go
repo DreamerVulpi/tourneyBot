@@ -25,10 +25,6 @@ type PGS struct {
 }
 
 func (c *Client) GetListGroups(slug string) ([]PGS, error) {
-	// if !startgg.Token() {
-	// 	return []PGS{}, errors.New("token verification - authentication token not set")
-	// }
-
 	var variables = map[string]any{
 		"slug": slug,
 	}

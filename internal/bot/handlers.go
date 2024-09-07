@@ -14,6 +14,7 @@ type commandHandler struct {
 	guildID               string
 	templateInviteMessage string
 	stop                  chan struct{}
+	m                     *discordgo.MessageCreate
 	client                *startgg.Client
 }
 
@@ -43,8 +44,7 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 		},
 	)
 
-	var m *discordgo.MessageCreate
-	go SendingMessages(s, m, cmd.stop, cmd.guildID, cmd.slug, cmd.templateInviteMessage, cmd.client)
+	go cmd.SendingMessages(s)
 
 	if err != nil {
 		log.Println(errors.New("can't respond on message"))

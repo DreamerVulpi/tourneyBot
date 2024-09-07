@@ -19,11 +19,7 @@ type PGState struct {
 	State int   `json:"state"`
 }
 
-func (c *Client) GetPhaseGroupState(phaseGroupID int64) (int, error) {
-	// if !startgg.Token() {
-	// 	return 0, errors.New("token Verification - Authentication Token Not Set")
-	// }
-
+func (c *Client) GetPhaseGroupState(phaseGroupID int64) (State, error) {
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 	}
@@ -44,5 +40,5 @@ func (c *Client) GetPhaseGroupState(phaseGroupID int64) (int, error) {
 		return 0, fmt.Errorf("JSON Unmarshal - %w", err)
 	}
 
-	return results.Data.PhaseGroup.State, nil
+	return State(results.Data.PhaseGroup.State), nil
 }

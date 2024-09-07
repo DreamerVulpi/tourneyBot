@@ -76,10 +76,6 @@ type Authorizations struct {
 }
 
 func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
-	// if !startgg.Token() {
-	// 	return []Nodes{}, errors.New("token verification - authentication token not set")
-	// }
-
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 		"page":         page,
