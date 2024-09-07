@@ -1,16 +1,13 @@
-package functions
+package startgg
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-
-	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type RawPhaseGroupData struct {
-	Data   DataPhaseGroup   `json:"data"`
-	Errors []startgg.Errors `json:"errors"`
+	Data   DataPhaseGroup `json:"data"`
+	Errors []Errors       `json:"errors"`
 }
 
 type DataPhaseGroup struct {
@@ -78,10 +75,10 @@ type Authorizations struct {
 	Discord string `json:"externalUsername"`
 }
 
-func GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
-	if !startgg.Token() {
-		return []Nodes{}, errors.New("token verification - authentication token not set")
-	}
+func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
+	// if !startgg.Token() {
+	// 	return []Nodes{}, errors.New("token verification - authentication token not set")
+	// }
 
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
@@ -89,12 +86,12 @@ func GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
 		"perPage":      perPage,
 	}
 
-	query, err := json.Marshal(startgg.PrepareQuery(startgg.GetPhaseGroupSets, variables))
+	query, err := json.Marshal(PrepareQuery(getPhaseGroupSets, variables))
 	if err != nil {
 		return []Nodes{}, fmt.Errorf("JSON Marshal - %w", err)
 	}
 
-	data, err := startgg.RunQuery(query)
+	data, err := c.RunQuery(query)
 	if err != nil {
 		return []Nodes{}, err
 	}

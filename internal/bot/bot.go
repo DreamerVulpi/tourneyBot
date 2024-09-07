@@ -2,11 +2,14 @@ package bot
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneybot/config"
+	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 func Start(cfg config.Config) error {
@@ -24,8 +27,13 @@ func Start(cfg config.Config) error {
 
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 
+	client := startgg.NewClient(cfg.Startgg.Token, &http.Client{
+		Timeout: time.Second * 10,
+	})
+
 	cmdHandler := commandHandler{
 		guildID: cfg.Discord.GuildID,
+		client:  client,
 		stop:    make(chan struct{}),
 	}
 

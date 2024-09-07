@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneybot/internal/startgg/functions"
+	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type player struct {
@@ -66,7 +66,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, templat
 	}
 }
 
-func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID, slug, template string) error {
+func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID, slug, template string, client *startgg.Client) error {
 	for {
 		select {
 		case <-stop:
@@ -74,7 +74,7 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 			return nil
 		default:
 			fmt.Println("Start sending messages...")
-			if err := SendProcess(s, m, guildID, slug, template); err != nil {
+			if err := SendProcess(s, m, guildID, slug, template, client); err != nil {
 				return err
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -82,10 +82,10 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 	}
 }
 
-func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug, template string) error {
+func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug, template string, client *startgg.Client) error {
 
 	// phaseGroups, err := startgg.GetListPhaseGroups(Slug)
-	phaseGroups, err := functions.GetListGroups(slug)
+	phaseGroups, err := client.GetListGroups(slug)
 	if err != nil {
 		return err
 	}
@@ -97,13 +97,13 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 
 	groupId := phaseGroups[0].Id
 
-	state, err := functions.GetPhaseGroupState(groupId)
+	state, err := client.GetPhaseGroupState(groupId)
 	if err != nil {
 		return err
 	}
 
 	if State(state) == IsDone {
-		total, err := functions.GetPagesCount(groupId)
+		total, err := client.GetPagesCount(groupId)
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug
 		fmt.Println(total, "/", 60, "=", pages)
 
 		for i := 0; i < pages; i++ {
-			sets, err := functions.GetSets(groupId, pages, 60)
+			sets, err := client.GetSets(groupId, pages, 60)
 			for _, set := range sets {
 
 				// checkIn := fmt.Sprint("https://www.start.gg/", Slug, "/set/", set.Id)

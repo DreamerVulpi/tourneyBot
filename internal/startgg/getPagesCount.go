@@ -1,33 +1,30 @@
-package functions
+package startgg
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-
-	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type RawPagesDataCount struct {
-	Data   DataPhaseGroup   `json:"data"`
-	Errors []startgg.Errors `json:"errors"`
+	Data   DataPhaseGroup `json:"data"`
+	Errors []Errors       `json:"errors"`
 }
 
-func GetPagesCount(phaseGroupID int64) (int, error) {
-	if !startgg.Token() {
-		return 0, errors.New("token verification - authentication token not set")
-	}
+func (c *Client) GetPagesCount(phaseGroupID int64) (int, error) {
+	// if !startgg.Token() {
+	// 	return 0, errors.New("token verification - authentication token not set")
+	// }
 
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 	}
 
-	query, err := json.Marshal(startgg.PrepareQuery(startgg.GetPagesCount, variables))
+	query, err := json.Marshal(PrepareQuery(getPagesCount, variables))
 	if err != nil {
 		return 0, fmt.Errorf("JSON Marshal - %w", err)
 	}
 
-	data, err := startgg.RunQuery(query)
+	data, err := c.RunQuery(query)
 	if err != nil {
 		return 0, err
 	}

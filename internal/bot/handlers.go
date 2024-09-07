@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type commandHandler struct {
@@ -13,6 +14,7 @@ type commandHandler struct {
 	guildID               string
 	templateInviteMessage string
 	stop                  chan struct{}
+	client                *startgg.Client
 }
 
 func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -42,7 +44,7 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 	)
 
 	var m *discordgo.MessageCreate
-	go SendingMessages(s, m, cmd.stop, cmd.guildID, cmd.slug, cmd.templateInviteMessage)
+	go SendingMessages(s, m, cmd.stop, cmd.guildID, cmd.slug, cmd.templateInviteMessage, cmd.client)
 
 	if err != nil {
 		log.Println(errors.New("can't respond on message"))

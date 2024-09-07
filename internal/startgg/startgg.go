@@ -6,22 +6,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
-var (
+type Client struct {
 	AuthToken string
-	client    = &http.Client{
-		Timeout: time.Second * 10,
-	}
-)
-
-func SetAuthToken(token string) {
-	AuthToken = token
+	Client    *http.Client
 }
 
-func Token() bool {
-	return len(AuthToken) > 0
+func NewClient(token string, clt *http.Client) *Client {
+	return &Client{
+		AuthToken: token,
+		Client:    clt,
+	}
 }
 
 func PrepareQuery(query string, variables map[string]interface{}) map[string]interface{} {
@@ -31,7 +27,7 @@ func PrepareQuery(query string, variables map[string]interface{}) map[string]int
 	}
 }
 
-func RunQuery(query []byte) ([]byte, error) {
+func (c *Client) RunQuery(query []byte) ([]byte, error) {
 	// Creates the POST request and checks for errors.
 	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
 	if err != nil {
@@ -40,10 +36,10 @@ func RunQuery(query []byte) ([]byte, error) {
 
 	// Sets the headers within the request.
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", AuthToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken))
 
 	// Sends the request and receives the response of it.
-	res, err := client.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP Response - %w", err)
 	}

@@ -1,16 +1,13 @@
-package functions
+package startgg
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-
-	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type RawPhaseGroupsData struct {
-	Data   DataEvent        `json:"data"`
-	Errors []startgg.Errors `json:"errors"`
+	Data   DataEvent `json:"data"`
+	Errors []Errors  `json:"errors"`
 }
 
 type DataEvent struct {
@@ -27,21 +24,21 @@ type PGS struct {
 	Id int64 `json:"id"`
 }
 
-func GetListGroups(slug string) ([]PGS, error) {
-	if !startgg.Token() {
-		return []PGS{}, errors.New("token verification - authentication token not set")
-	}
+func (c *Client) GetListGroups(slug string) ([]PGS, error) {
+	// if !startgg.Token() {
+	// 	return []PGS{}, errors.New("token verification - authentication token not set")
+	// }
 
 	var variables = map[string]any{
 		"slug": slug,
 	}
 
-	query, err := json.Marshal(startgg.PrepareQuery(startgg.GetListPhaseGroups, variables))
+	query, err := json.Marshal(PrepareQuery(getListPhaseGroups, variables))
 	if err != nil {
 		return []PGS{}, fmt.Errorf("JSON Marshal - %w", err)
 	}
 
-	data, err := startgg.RunQuery(query)
+	data, err := c.RunQuery(query)
 	if err != nil {
 		return []PGS{}, err
 	}

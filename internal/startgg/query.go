@@ -1,7 +1,7 @@
 package startgg
 
 const (
-	GetListPhaseGroups = `
+	getListPhaseGroups = `
 	query getListPhaseGroups($slug: String) {
 		event(slug: $slug) {
 			id
@@ -12,7 +12,7 @@ const (
 		}
 	},
 	`
-	GetPagesCount = `
+	getPagesCount = `
 	query getPagesCount($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){
 			id
@@ -26,7 +26,7 @@ const (
 		`
 
 	// TODO: WINNER FUNCTION
-	GetWinner = `
+	getWinner = `
 	query getWinner($setId: ID!){
 		set(id:$setId) {
 			winnerId
@@ -34,7 +34,7 @@ const (
 	}
 	`
 
-	GetPhaseGroupState = `
+	getPhaseGroupState = `
 	query getPhaseGroupState($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){
 			id
@@ -42,7 +42,7 @@ const (
 		}
 	}`
 
-	GetPhaseGroupSets = `
+	getPhaseGroupSets = `
 	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){
 			id
