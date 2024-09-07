@@ -45,7 +45,7 @@ func searchContactDiscord(s *discordgo.Session, nickname, guildID string) (strin
 	return (*user[0]).User.ID, nil
 }
 
-func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, slug, template string) {
 	channel, err := s.UserChannelCreate(SendData.discordID)
 	if err != nil {
 		fmt.Println("error creating channel:", err)
@@ -56,8 +56,8 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	link := fmt.Sprint("https://www.start.gg/", Slug, "/set/", SendData.setID)
-	invite := fmt.Sprintf(TemplateInviteMessage, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
+	link := fmt.Sprint("https://www.start.gg/", slug, "/set/", SendData.setID)
+	invite := fmt.Sprintf(template, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
 	if err != nil {
@@ -70,7 +70,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID string) error {
+func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}, guildID, slug, template string) error {
 	for {
 		select {
 		case <-stop:
@@ -78,7 +78,7 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 			return nil
 		default:
 			fmt.Println("Start sending messages...")
-			if err := SendProcess(s, m, guildID); err != nil {
+			if err := SendProcess(s, m, guildID, slug, template); err != nil {
 				return err
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -86,13 +86,10 @@ func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan
 	}
 }
 
-func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID string) error {
-	if !slug() {
-		return errors.New("slug data is empty")
-	}
+func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID, slug, template string) error {
 
 	// phaseGroups, err := startgg.GetListPhaseGroups(Slug)
-	phaseGroups, err := functions.GetListGroups(Slug)
+	phaseGroups, err := functions.GetListGroups(slug)
 	if err != nil {
 		return err
 	}
@@ -155,7 +152,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID strin
 
 				SendData = toPlayer1
 
-				sendMessage(s, m)
+				sendMessage(s, m, slug, template)
 
 				toPlayer2 := player{
 					setID:     set.Id,
@@ -170,7 +167,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate, guildID strin
 				// log.Printf("player 2 | Discord: ", player2Discord)
 
 				SendData = toPlayer2
-				sendMessage(s, m)
+				sendMessage(s, m, slug, template)
 
 				fmt.Println("sended messages..")
 				// fmt.Println(player1.User.ID)

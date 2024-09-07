@@ -9,35 +9,8 @@ import (
 	"github.com/dreamervulpi/tourneybot/config"
 )
 
-var (
-	Slug                  string
-	TemplateInviteMessage string
-)
-
-func SetTemplateInviteMessage(template string) {
-	TemplateInviteMessage = template
-}
-
-func SetSlug(slug string) {
-	Slug = slug
-}
-
-func slug() bool {
-	return len(Slug) > 0
-}
-
 func Start(cfg config.Config) error {
-	// if !len(cfg.Discord.AppID) > 0 {
-	// 	return errors.New("appID is empty")
-	// }
-
-	// if !server() {
-	// 	return errors.New("serverID(guildID) is empty")
-	// }
-
-	// if !token() {
-	// 	return errors.New("authToken is empty")
-	// }
+	// TODO: check variables
 
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
