@@ -8,146 +8,118 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// TODO: Refactor code
+type commandHandler struct {
+	stop chan struct{}
+}
 
-var (
-	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		"check": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			respond := fmt.Sprint("server(Guild) ID: " + GuildID + "\n" + "slug: " + Slug + "\n" + "templateInviteMessage: \n" + TemplateInviteMessage)
-			err := s.InteractionRespond(
-				i.Interaction,
-				&discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: respond,
-					},
-				},
-			)
-			if err != nil {
-				log.Println(errors.New("can't respond on message"))
-			}
+func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	respond := fmt.Sprint("server(Guild) ID: " + GuildID + "\n" + "slug: " + Slug + "\n" + "templateInviteMessage: \n" + TemplateInviteMessage)
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: respond,
+			},
 		},
-		"start-sending": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := s.InteractionRespond(
-				i.Interaction,
-				&discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Start sending...",
-					},
-				},
-			)
-
-			// FIXME: SEND_MESSAGES
-			var m *discordgo.MessageCreate
-
-			SendProcess(s, m)
-
-			if err != nil {
-				log.Println(errors.New("can't respond on message"))
-			}
-		},
-		"stop-sending": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := s.InteractionRespond(
-				i.Interaction,
-				&discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: "WIP",
-					},
-				},
-			)
-
-			// TODO: Method to correctly stop SendProcess
-
-			if err != nil {
-				log.Println(errors.New("can't respond on message"))
-			}
-		},
-		"set-event": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			options := i.ApplicationCommandData().Options
-
-			optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-			for _, opt := range options {
-				optionMap[opt.Name] = opt
-			}
-
-			fmt.Println(optionMap)
-
-			margs := make([]interface{}, 0, len(options))
-			msgformat := ""
-
-			if option, ok := optionMap["slug"]; ok {
-				margs = append(margs, option.StringValue())
-				msgformat += "> SLUG: %s\n"
-				SetSlug(option.StringValue())
-			}
-
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf(
-						msgformat,
-						margs...,
-					),
-				},
-			})
-		},
-		"set-guild-id": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			options := i.ApplicationCommandData().Options
-
-			optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-			for _, opt := range options {
-				optionMap[opt.Name] = opt
-			}
-
-			fmt.Println(optionMap)
-
-			margs := make([]interface{}, 0, len(options))
-			msgformat := ""
-
-			if option, ok := optionMap["guildID"]; ok {
-				margs = append(margs, option.StringValue())
-				msgformat += "> GuildID: %s\n"
-				SetGuildID(option.StringValue())
-			}
-
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf(
-						msgformat,
-						margs...,
-					),
-				},
-			})
-		},
-		"edit-invite-message": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			options := i.ApplicationCommandData().Options
-
-			optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-			for _, opt := range options {
-				optionMap[opt.Name] = opt
-			}
-
-			margs := make([]interface{}, 0, len(options))
-			msgformat := ""
-
-			if option, ok := optionMap["template"]; ok {
-				margs = append(margs, option.StringValue())
-				msgformat += "> Input: %s\n"
-				SetTemplateInviteMessage(option.StringValue())
-			}
-
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf(
-						msgformat,
-						margs...,
-					),
-				},
-			})
-		},
+	)
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
 	}
-)
+}
+func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Start sending...",
+			},
+		},
+	)
+
+	var m *discordgo.MessageCreate
+	go SendingMessages(s, m, cmd.stop)
+
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
+	}
+}
+func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	fmt.Printf("1111111111")
+	cmd.stop <- struct{}{}
+	fmt.Printf("2222222222")
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Stopped",
+			},
+		},
+	)
+
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
+	}
+}
+func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	input := i.ApplicationCommandData().Options[0].StringValue()
+
+	margs := make([]interface{}, 0, len(input))
+	msgformat := ""
+
+	margs = append(margs, input)
+	msgformat += "> GuildID: %s\n"
+	SetGuildID(input)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf(
+				msgformat,
+				margs...,
+			),
+		},
+	})
+}
+func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	input := i.ApplicationCommandData().Options[0].StringValue()
+
+	margs := make([]interface{}, 0, len(input))
+	msgformat := ""
+
+	margs = append(margs, input)
+	msgformat += "> SLUG: %s\n"
+	SetSlug(input)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf(
+				msgformat,
+				margs...,
+			),
+		},
+	})
+}
+func (cmd *commandHandler) editInviteMessage(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	input := i.ApplicationCommandData().Options[0].StringValue()
+
+	margs := make([]interface{}, 0, len(input))
+	msgformat := ""
+
+	margs = append(margs, input)
+	msgformat += "> Template: %s\n"
+	SetTemplateInviteMessage(input)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf(
+				msgformat,
+				margs...,
+			),
+		},
+	})
+}

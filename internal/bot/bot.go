@@ -76,6 +76,19 @@ func Start() error {
 		return err
 	}
 
+	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
+
+	cmdHandler := commandHandler{
+		stop: make(chan struct{}),
+	}
+
+	commandHandlers["check"] = cmdHandler.check
+	commandHandlers["start-sending"] = cmdHandler.start_sending
+	commandHandlers["stop-sending"] = cmdHandler.stop_sending
+	commandHandlers["set-event"] = cmdHandler.setEvent
+	commandHandlers["set-guild-id"] = cmdHandler.setGuildID
+	commandHandlers["edit-invite-message"] = cmdHandler.editInviteMessage
+
 	session.AddHandler(func(
 		s *discordgo.Session,
 		i *discordgo.InteractionCreate,
@@ -85,11 +98,14 @@ func Start() error {
 		}
 	})
 
-	for _, command := range commands {
-		_, err := session.ApplicationCommandCreate(AppID, GuildID, command)
+	fmt.Println("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, command := range commands {
+		cmd, err := session.ApplicationCommandCreate(AppID, GuildID, command)
 		if err != nil {
 			fmt.Printf("can't create '%v' command: %v\n", command.Name, err)
 		}
+		registeredCommands[i] = cmd
 	}
 
 	defer session.Close()
@@ -101,7 +117,13 @@ func Start() error {
 	fmt.Println("press Ctrl+C to exit")
 	<-stop
 
-	// TODO: Add functional for deleting commands
+	fmt.Println("Removing commands...")
+	for _, v := range registeredCommands {
+		err := session.ApplicationCommandDelete(AppID, GuildID, v.ID)
+		if err != nil {
+			fmt.Printf("Cannot delete '%v' command: %v", v.Name, err)
+		}
+	}
 
 	fmt.Println("gracefully shutting down.")
 	return nil

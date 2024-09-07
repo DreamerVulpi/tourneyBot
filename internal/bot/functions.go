@@ -24,16 +24,15 @@ type opponent struct {
 
 var (
 	SendData player
-	Pages    int
 )
 
-func SetSendData(data player) {
-	SendData = data
-}
+type State int
 
-func SetPages(number int) {
-	Pages = number
-}
+const (
+	IsNotStarted State = 1
+	InProcess    State = 2
+	IsDone       State = 3
+)
 
 func searchContactDiscord(s *discordgo.Session, nickname string) (string, error) {
 	if !server() {
@@ -57,7 +56,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	link := fmt.Sprint("https://www.start.gg/", "tournament/wild-hunters-1/event/main-online-crossplatform-event", "/set/", SendData.setID)
+	link := fmt.Sprint("https://www.start.gg/", Slug, "/set/", SendData.setID)
 	invite := fmt.Sprintf(TemplateInviteMessage, "турик", SendData.opponent.nickname, SendData.opponent.tekkenID, SendData.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
@@ -71,13 +70,29 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+func SendingMessages(s *discordgo.Session, m *discordgo.MessageCreate, stop chan struct{}) error {
+	for {
+		select {
+		case <-stop:
+			fmt.Println("Stopped.")
+			return nil
+		default:
+			fmt.Println("Start sending messages...")
+			if err := SendProcess(s, m); err != nil {
+				return err
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
+
 func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
-	// if !slug() {
-	// 	return errors.New("slug data is empty.")
-	// }
+	if !slug() {
+		return errors.New("slug data is empty")
+	}
 
 	// phaseGroups, err := startgg.GetListPhaseGroups(Slug)
-	phaseGroups, err := functions.GetListGroups("tournament/wild-hunters-1/event/main-online-crossplatform-event")
+	phaseGroups, err := functions.GetListGroups(Slug)
 	if err != nil {
 		return err
 	}
@@ -94,29 +109,26 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
 		return err
 	}
 
-	// State = 1 (not started) v
-	// State = 2 (in process)
-	// State = 3 (done)
-
-	if state == 3 {
-		// TODO: Query for pages
+	if State(state) == IsDone {
 		total, err := functions.GetPagesCount(groupId)
 		if err != nil {
 			return err
 		}
 
+		var pages int
+
 		if total <= 60 {
-			SetPages(1)
+			pages = 1
 		} else {
-			SetPages(int(math.Round(float64(total / 60))))
+			pages = int(math.Round(float64(total / 60)))
 		}
 
-		fmt.Println(total, "/", 60, "=", Pages)
+		fmt.Println(total, "/", 60, "=", pages)
 
-		for i := 0; i < Pages; i++ {
-			sets, err := functions.GetSets(groupId, Pages, 60)
+		for i := 0; i < pages; i++ {
+			sets, err := functions.GetSets(groupId, pages, 60)
 			for _, set := range sets {
-				time.Sleep(1 * time.Second)
+
 				// checkIn := fmt.Sprint("https://www.start.gg/", Slug, "/set/", set.Id)
 				// checkIn := fmt.Sprint("https://www.start.gg/", "tournament/wild-hunters-1/event/main-online-crossplatform-event", "/set/", set.Id)
 				// fmt.Println("generated CheckIn: ", checkIn)
@@ -129,7 +141,7 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
 				dv, _ := searchContactDiscord(s, "DreamerVulpi")
 				fcuk, _ := searchContactDiscord(s, "fcuk_limit")
 
-				sendtoPlayer1 := player{
+				toPlayer1 := player{
 					setID:     set.Id,
 					discordID: dv,
 					opponent: opponent{
@@ -141,11 +153,11 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
 
 				// log.Printf("player 1 | Discord: ", player1Discord)
 
-				SetSendData(sendtoPlayer1)
+				SendData = toPlayer1
 
 				sendMessage(s, m)
 
-				sendtoPlayer2 := player{
+				toPlayer2 := player{
 					setID:     set.Id,
 					discordID: dv,
 					opponent: opponent{
@@ -155,13 +167,12 @@ func SendProcess(s *discordgo.Session, m *discordgo.MessageCreate) error {
 					},
 				}
 
-				time.Sleep(1 * time.Second)
-
 				// log.Printf("player 2 | Discord: ", player2Discord)
 
-				SetSendData(sendtoPlayer2)
+				SendData = toPlayer2
 				sendMessage(s, m)
 
+				fmt.Println("sended messages..")
 				// fmt.Println(player1.User.ID)
 				// fmt.Println("player 1 | ID: ", set.Slots[0].Entrant.Id)
 				// fmt.Println("player 1 | Nickname: ", set.Slots[0].Entrant.Participants[0].GamerTag)
