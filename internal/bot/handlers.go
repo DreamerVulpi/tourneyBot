@@ -13,6 +13,7 @@ type commandHandler struct {
 	slug                  string
 	guildID               string
 	templateInviteMessage string
+	templateStreamMessage string
 	stop                  chan struct{}
 	m                     *discordgo.MessageCreate
 	client                *startgg.Client

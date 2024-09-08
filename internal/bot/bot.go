@@ -13,7 +13,7 @@ import (
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
-func Start(cfg config.Config) error {
+func Start(cfg config.Config, t config.Template) error {
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
@@ -31,9 +31,11 @@ func Start(cfg config.Config) error {
 	})
 
 	cmdHandler := commandHandler{
-		guildID: cfg.Discord.GuildID,
-		client:  client,
-		stop:    make(chan struct{}),
+		guildID:               cfg.Discord.GuildID,
+		client:                client,
+		stop:                  make(chan struct{}),
+		templateInviteMessage: t.InviteMessage,
+		templateStreamMessage: t.StreamMessage,
 	}
 
 	commandHandlers["check"] = cmdHandler.check
@@ -56,7 +58,7 @@ func Start(cfg config.Config) error {
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)
-		log.Printf("added command: %v\n", command.Name)
+		log.Printf("adding command...: %v\n", command.Name)
 		if err != nil {
 			log.Printf("can't create '%v' command: %v\n", command.Name, err)
 		}
@@ -72,14 +74,14 @@ func Start(cfg config.Config) error {
 	log.Println("press Ctrl+C to exit")
 	<-stop
 
-	log.Println("Removing commands...")
+	log.Println("removing commands...")
 	for _, v := range registeredCommands {
 		err := session.ApplicationCommandDelete(cfg.Discord.AppID, cfg.Discord.GuildID, v.ID)
+		log.Printf("deleting command...: %v\n", v.Name)
 		if err != nil {
 			fmt.Printf("Cannot delete '%v' command: %v\n", v.Name, err)
 		}
 	}
-
-	log.Println("gracefully shutting down.")
+	log.Println("gracefully shutting down!")
 	return nil
 }

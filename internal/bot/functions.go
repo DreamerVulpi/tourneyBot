@@ -58,18 +58,19 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	}
 }
 
-func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
+func (c *commandHandler) SendingMessages(s *discordgo.Session) {
 	for {
 		select {
-		case <-c.stop:
-			log.Println("sending messages: STOPPED!")
-			return nil
 		default:
 			log.Println("sending messages: STARTED!")
 			if err := c.SendProcess(s); err != nil {
-				return err
+				return
 			}
-			time.Sleep(500 * time.Millisecond)
+			// TODO: TIMER 5 MINUTES
+			time.Sleep(2 * time.Second)
+		case <-c.stop:
+			log.Println("sending messages: STOPPED!")
+			return
 		}
 	}
 }
@@ -110,8 +111,6 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 					pages = int(math.Round(float64(total / 60)))
 				}
 
-				fmt.Println(total, "/", 60, "=", pages)
-
 				for i := 0; i < pages; i++ {
 
 					sets, err := c.client.GetSets(phaseGroup.Id, pages, 60)
@@ -123,36 +122,36 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 						if set.State == startgg.IsDone {
 							// TODO: player1, _ := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
 							// TODO: player2, _ := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
-							dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
-							fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
+							go func() {
+								dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
+								fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
 
-							toPlayer1 := playerData{
-								tournament: tournament.Name,
-								setID:      set.Id,
-								discordID:  dv, // TODO: Set player1
-								opponent: opponentData{
-									discordID: fcuk, // TODO: Set player2
-									nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
-									tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
-								},
-							}
+								toPlayer1 := playerData{
+									tournament: tournament.Name,
+									setID:      set.Id,
+									discordID:  dv, // TODO: Set player1
+									opponent: opponentData{
+										discordID: fcuk, // TODO: Set player2
+										nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
+										tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+									},
+								}
+								toPlayer2 := playerData{
+									tournament: tournament.Name,
+									setID:      set.Id,
+									discordID:  dv, // TODO: Set player2
+									opponent: opponentData{
+										discordID: fcuk, // TODO: Set player1
+										nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
+										tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+									},
+								}
 
-							c.sendMessage(s, toPlayer1)
+								c.sendMessage(s, toPlayer1)
+								c.sendMessage(s, toPlayer2)
 
-							toPlayer2 := playerData{
-								tournament: tournament.Name,
-								setID:      set.Id,
-								discordID:  dv, // TODO: Set player2
-								opponent: opponentData{
-									discordID: fcuk, // TODO: Set player1
-									nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
-									tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
-								},
-							}
-
-							c.sendMessage(s, toPlayer2)
-
-							log.Printf("%v vs %v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
+								log.Printf("%v vs %v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
+							}()
 						}
 					}
 				}

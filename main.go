@@ -10,9 +10,10 @@ import (
 
 func main() {
 	cfg, err := config.LoadConfig("config/config.toml")
+	tmpts, err := config.LoadTemplates("config/templates.toml")
 	if err != nil {
-		log.Println(errors.New("not loaded configation: ").Error() + err.Error())
+		log.Println(errors.New("not loaded: ").Error() + err.Error())
 	} else {
-		bot.Start(cfg)
+		bot.Start(cfg, tmpts)
 	}
 }
