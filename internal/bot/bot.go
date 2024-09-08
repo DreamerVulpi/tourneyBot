@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -51,33 +52,34 @@ func Start(cfg config.Config) error {
 		}
 	})
 
-	fmt.Println("Adding commands...")
+	log.Println("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)
+		log.Printf("added command: %v\n", command.Name)
 		if err != nil {
-			fmt.Printf("can't create '%v' command: %v\n", command.Name, err)
+			log.Printf("can't create '%v' command: %v\n", command.Name, err)
 		}
 		registeredCommands[i] = cmd
 	}
 
 	defer session.Close()
 
-	fmt.Println("the bot is online!")
+	log.Println("the bot is online!")
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	fmt.Println("press Ctrl+C to exit")
+	log.Println("press Ctrl+C to exit")
 	<-stop
 
-	fmt.Println("Removing commands...")
+	log.Println("Removing commands...")
 	for _, v := range registeredCommands {
 		err := session.ApplicationCommandDelete(cfg.Discord.AppID, cfg.Discord.GuildID, v.ID)
 		if err != nil {
-			fmt.Printf("Cannot delete '%v' command: %v", v.Name, err)
+			fmt.Printf("Cannot delete '%v' command: %v\n", v.Name, err)
 		}
 	}
 
-	fmt.Println("gracefully shutting down.")
+	log.Println("gracefully shutting down.")
 	return nil
 }

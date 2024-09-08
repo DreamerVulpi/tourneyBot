@@ -18,53 +18,54 @@ type commandHandler struct {
 	client                *startgg.Client
 }
 
-func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	respond := fmt.Sprint("server(Guild) ID: " + cmd.guildID + "\n" + "slug: " + cmd.slug + "\n" + "templateInviteMessage: \n" + cmd.templateInviteMessage)
+func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
 	err := s.InteractionRespond(
 		i.Interaction,
 		&discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: respond,
+				Content: text,
 			},
 		},
 	)
 	if err != nil {
-		log.Println(errors.New("can't respond on message"))
+		return errors.New("can't respond on message")
+	}
+	return nil
+}
+
+func responseSetted(s *discordgo.Session, i *discordgo.InteractionCreate, msgformat string, margs []interface{}) error {
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf(
+				msgformat,
+				margs...,
+			),
+		},
+	})
+	if err != nil {
+		return errors.New("can't respond on message")
+	}
+	return nil
+}
+
+func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	text := fmt.Sprint("server(Guild) ID: " + cmd.guildID + "\n" + "slug: " + cmd.slug + "\n" + "templateInviteMessage: \n" + cmd.templateInviteMessage)
+	if err := response(s, i, text); err != nil {
+		log.Println(err.Error())
 	}
 }
 func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	err := s.InteractionRespond(
-		i.Interaction,
-		&discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Start sending...",
-			},
-		},
-	)
+	if err := response(s, i, "Start sending..."); err != nil {
+		log.Println(err.Error())
+	}
 
 	go cmd.SendingMessages(s)
-
-	if err != nil {
-		log.Println(errors.New("can't respond on message"))
-	}
 }
 func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	go func() {
-		err := s.InteractionRespond(
-			i.Interaction,
-			&discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "Stopping...",
-				},
-			},
-		)
-
-		if err != nil {
-			log.Println(errors.New("can't respond on message"))
-		}
+		response(s, i, "stopping...")
 	}()
 
 	// Send signal to stop sending messages
@@ -83,16 +84,9 @@ func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.Interac
 
 	margs = append(margs, input)
 	msgformat += "> GuildID: %s\n"
-
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf(
-				msgformat,
-				margs...,
-			),
-		},
-	})
+	if err := responseSetted(s, i, msgformat, margs); err != nil {
+		log.Println(err.Error())
+	}
 }
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
@@ -104,15 +98,9 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 	msgformat += "> SLUG: %s\n"
 	cmd.slug = input
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf(
-				msgformat,
-				margs...,
-			),
-		},
-	})
+	if err := responseSetted(s, i, msgformat, margs); err != nil {
+		log.Println(err.Error())
+	}
 }
 func (cmd *commandHandler) editInviteMessage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
@@ -124,13 +112,7 @@ func (cmd *commandHandler) editInviteMessage(s *discordgo.Session, i *discordgo.
 	msgformat += "> Template: %s\n"
 	cmd.templateInviteMessage = input
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf(
-				msgformat,
-				margs...,
-			),
-		},
-	})
+	if err := responseSetted(s, i, msgformat, margs); err != nil {
+		log.Println(err.Error())
+	}
 }

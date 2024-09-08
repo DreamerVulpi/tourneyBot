@@ -21,7 +21,8 @@ type Event struct {
 }
 
 type PGS struct {
-	Id int64 `json:"id"`
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (c *Client) GetListGroups(slug string) ([]PGS, error) {

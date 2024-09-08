@@ -78,8 +78,9 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 	}
 
 	// TODO: GetListPhaseGroups
-	// for _, pgs := range results.Data.Event.PhaseGroups {
+	// for _, pgs := range phaseGroups {
 	// 	pgs.Id
+	// 	pgs.Name
 	// }
 
 	groupId := phaseGroups[0].Id
