@@ -3,7 +3,9 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -11,9 +13,10 @@ import (
 )
 
 type playerData struct {
-	setID     int64
-	discordID string
-	opponent  opponentData
+	tournament string
+	setID      int64
+	discordID  string
+	opponent   opponentData
 }
 
 type opponentData struct {
@@ -33,7 +36,7 @@ func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname str
 func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	channel, err := s.UserChannelCreate(player.discordID)
 	if err != nil {
-		fmt.Println("error creating channel:", err)
+		log.Println("error creating channel:", err)
 		s.ChannelMessageSend(
 			c.m.ChannelID,
 			"Something went wrong while sending the DM!",
@@ -42,7 +45,7 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	}
 
 	link := fmt.Sprint("https://www.start.gg/", c.slug, "/set/", player.setID)
-	invite := fmt.Sprintf(c.templateInviteMessage, "турик", player.opponent.nickname, player.opponent.tekkenID, player.opponent.discordID, link)
+	invite := fmt.Sprintf(c.templateInviteMessage, player.tournament, player.opponent.nickname, player.opponent.tekkenID, player.opponent.discordID, link)
 
 	_, err = s.ChannelMessageSend(channel.ID, invite)
 	if err != nil {
@@ -59,10 +62,10 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 	for {
 		select {
 		case <-c.stop:
-			fmt.Println("Stopped.")
+			log.Println("sending messages: STOPPED!")
 			return nil
 		default:
-			fmt.Println("Start sending messages...")
+			log.Println("sending messages: STARTED!")
 			if err := c.SendProcess(s); err != nil {
 				return err
 			}
@@ -72,90 +75,89 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 }
 
 func (c *commandHandler) SendProcess(s *discordgo.Session) error {
-	phaseGroups, err := c.client.GetListGroups(c.slug)
+	tournament, err := c.client.GetTournament(strings.Replace(strings.SplitAfter(c.slug, "/")[1], "/", "", 1))
 	if err != nil {
 		return err
 	}
 
-	// TODO: GetListPhaseGroups
-	// for _, pgs := range phaseGroups {
-	// 	pgs.Id
-	// 	pgs.Name
-	// }
-
-	groupId := phaseGroups[0].Id
-
-	state, err := c.client.GetPhaseGroupState(groupId)
-	if err != nil {
-		return err
-	}
-
-	if state == startgg.IsDone {
-		total, err := c.client.GetPagesCount(groupId)
+	// TODO: Change to InProcess
+	if tournament.State == startgg.IsDone {
+		phaseGroups, err := c.client.GetListGroups(c.slug)
 		if err != nil {
 			return err
 		}
-
-		var pages int
-
-		if total <= 60 {
-			pages = 1
-		} else {
-			pages = int(math.Round(float64(total / 60)))
-		}
-
-		fmt.Println(total, "/", 60, "=", pages)
-
-		for i := 0; i < pages; i++ {
-			sets, err := c.client.GetSets(groupId, pages, 60)
-			for _, set := range sets {
-
-				// checkIn := fmt.Sprint("https://www.start.gg/", Slug, "/set/", set.Id)
-				// checkIn := fmt.Sprint("https://www.start.gg/", "tournament/wild-hunters-1/event/main-online-crossplatform-event", "/set/", set.Id)
-				// fmt.Println("generated CheckIn: ", checkIn)
-				// fmt.Println("set ID: ", set.Id)
-				// fmt.Println("state set: ", set.State)
-
-				// player1Discord, _ := searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
-				// player2Discord, _ := searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
-
-				dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
-				fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
-
-				toPlayer1 := playerData{
-					setID:     set.Id,
-					discordID: dv,
-					opponent: opponentData{
-						discordID: fcuk,
-						nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
-						tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
-					},
-				}
-
-				c.sendMessage(s, toPlayer1)
-
-				toPlayer2 := playerData{
-					setID:     set.Id,
-					discordID: dv,
-					opponent: opponentData{
-						discordID: fcuk,
-						nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
-						tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
-					},
-				}
-
-				// log.Printf("player 2 | Discord: ", player2Discord)
-
-				c.sendMessage(s, toPlayer2)
-
-				fmt.Println("sended messages..")
-			}
+		for _, phaseGroup := range phaseGroups {
+			state, err := c.client.GetPhaseGroupState(phaseGroup.Id)
 			if err != nil {
-				fmt.Println(errors.New("error get sets"))
+				return err
+			}
+			// TODO: Change to InProcess
+			if state == startgg.IsDone {
+				total, err := c.client.GetPagesCount(phaseGroup.Id)
+				if err != nil {
+					return err
+				}
+
+				var pages int
+
+				if total == 0 {
+					continue
+				}
+
+				if total <= 60 {
+					pages = 1
+				} else {
+					pages = int(math.Round(float64(total / 60)))
+				}
+
+				fmt.Println(total, "/", 60, "=", pages)
+
+				for i := 0; i < pages; i++ {
+
+					sets, err := c.client.GetSets(phaseGroup.Id, pages, 60)
+					if err != nil {
+						log.Println(errors.New("error get sets"))
+					}
+					for _, set := range sets {
+						// TODO: Change to NotStarted
+						if set.State == startgg.IsDone {
+							// TODO: player1, _ := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
+							// TODO: player2, _ := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
+							dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
+							fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
+
+							toPlayer1 := playerData{
+								tournament: tournament.Name,
+								setID:      set.Id,
+								discordID:  dv, // TODO: Set player1
+								opponent: opponentData{
+									discordID: fcuk, // TODO: Set player2
+									nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
+									tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+								},
+							}
+
+							c.sendMessage(s, toPlayer1)
+
+							toPlayer2 := playerData{
+								tournament: tournament.Name,
+								setID:      set.Id,
+								discordID:  dv, // TODO: Set player2
+								opponent: opponentData{
+									discordID: fcuk, // TODO: Set player1
+									nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
+									tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+								},
+							}
+
+							c.sendMessage(s, toPlayer2)
+
+							log.Printf("%v vs %v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
+						}
+					}
+				}
 			}
 		}
-
 	}
-
 	return err
 }

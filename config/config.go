@@ -16,9 +16,17 @@ type ConfigDiscordBot struct {
 	AppID   string `toml:"appID"`
 }
 
+type ConfigTempalate struct {
+}
+
 type Config struct {
 	Startgg ConfigStartGG    `toml:"startgg"`
 	Discord ConfigDiscordBot `toml:"discordbot"`
+}
+
+type Templates struct {
+	InviteMessage string `toml:"invite"`
+	StreamMessage string `toml:"stream"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -41,4 +49,23 @@ func LoadConfig(file string) (Config, error) {
 	default:
 		return cfg, nil
 	}
+}
+
+func LoadTemplates(file string) (Templates, error) {
+	var tmpt Templates
+
+	err := cleanenv.ReadConfig(file, &tmpt)
+	if err != nil {
+		return Templates{}, err
+	}
+
+	switch {
+	case len(tmpt.InviteMessage) == 0:
+		return Templates{}, errors.New("inviteMessage is empty")
+	case len(tmpt.StreamMessage) == 0:
+		return Templates{}, errors.New("streamMessage is empty")
+	default:
+		return tmpt, nil
+	}
+
 }

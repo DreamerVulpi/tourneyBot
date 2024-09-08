@@ -17,6 +17,14 @@ const (
 	IsDone       State = 3
 )
 
+type StateEvent string
+
+const (
+	Created   StateEvent = "CREATED"
+	Active    StateEvent = "ACTIVE"
+	Completed StateEvent = "COMPLETED"
+)
+
 type Client struct {
 	AuthToken string
 	Client    *http.Client

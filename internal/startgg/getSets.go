@@ -33,7 +33,7 @@ type PageInfo struct {
 // Information about Set
 type Nodes struct {
 	Id     int64    `json:"id"`
-	State  int      `json:"state"`
+	State  State    `json:"state"`
 	Stream Streamer `json:"stream"`
 	Slots  []Slots  `json:"slots"`
 }

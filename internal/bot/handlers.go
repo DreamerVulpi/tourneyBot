@@ -68,15 +68,13 @@ func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.Inter
 		response(s, i, "stopping...")
 	}()
 
-	// Send signal to stop sending messages
 	cmd.stop <- struct{}{}
 
 	s.ChannelMessageSend(i.ChannelID, "Stopped!")
-
 }
+
 func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
-
 	cmd.guildID = input
 
 	margs := make([]interface{}, 0, len(input))
@@ -84,19 +82,20 @@ func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.Interac
 
 	margs = append(margs, input)
 	msgformat += "> GuildID: %s\n"
+
 	if err := responseSetted(s, i, msgformat, margs); err != nil {
 		log.Println(err.Error())
 	}
 }
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
+	cmd.slug = input
 
 	margs := make([]interface{}, 0, len(input))
 	msgformat := ""
 
 	margs = append(margs, input)
 	msgformat += "> SLUG: %s\n"
-	cmd.slug = input
 
 	if err := responseSetted(s, i, msgformat, margs); err != nil {
 		log.Println(err.Error())

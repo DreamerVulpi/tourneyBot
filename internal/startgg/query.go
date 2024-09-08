@@ -12,11 +12,23 @@ const (
 		}
 	},
 	`
+	getTournament = `
+	query getTournament($tourneySlug:String!) {
+		tournament(slug: $tourneySlug) {
+			id
+			name
+			state
+		}
+	}
+	`
+	// TODO: Set filter to 1
 	getPagesCount = `
 	query getPagesCount($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){
 			id
-			sets {
+			sets (
+				filters: {state: 3}
+			){
 				pageInfo{
 					total
 				}
@@ -41,7 +53,7 @@ const (
 			state
 		}
 	}`
-
+	// TODO: Set filter to 1
 	getPhaseGroupSets = `
 	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){
@@ -50,6 +62,7 @@ const (
 				page: $page
 				perPage: $perPage
 				sortType: STANDARD
+				filters: {state: 3}
 			){
 			pageInfo{
 				total

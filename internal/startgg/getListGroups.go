@@ -15,14 +15,14 @@ type DataEvent struct {
 }
 
 type Event struct {
-	Id          int64  `json:"id"`
-	Name        string `json:"name"`
-	PhaseGroups []PGS  `json:"phaseGroups"`
+	Id          int64      `json:"id"`
+	Name        string     `json:"name"`
+	State       StateEvent `json:"state"`
+	PhaseGroups []PGS      `json:"phaseGroups"`
 }
 
 type PGS struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
+	Id int64 `json:"id"`
 }
 
 func (c *Client) GetListGroups(slug string) ([]PGS, error) {
