@@ -6,17 +6,21 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dreamervulpi/tourneybot/config"
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
 type commandHandler struct {
-	slug                  string
-	guildID               string
+	slug    string
+	guildID string
+	// FIXME: Change to more args (command editTemplate)
 	templateInviteMessage string
+	// FIXME: Change to more args (command editTemplate)
 	templateStreamMessage string
 	stop                  chan struct{}
 	m                     *discordgo.MessageCreate
 	client                *startgg.Client
+	dataLobby             config.ConfigLobby
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -51,6 +55,7 @@ func responseSetted(s *discordgo.Session, i *discordgo.InteractionCreate, msgfor
 	return nil
 }
 
+// TODO: Add Embed-view
 func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	text := fmt.Sprint("server(Guild) ID: " + cmd.guildID + "\n" + "slug: " + cmd.slug + "\n" + "templateInviteMessage: \n" + cmd.templateInviteMessage)
 	if err := response(s, i, text); err != nil {
@@ -69,25 +74,12 @@ func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.Inter
 		response(s, i, "stopping...")
 	}()
 
+	// Send signal to stop process
 	cmd.stop <- struct{}{}
 
 	s.ChannelMessageSend(i.ChannelID, "Stopped!")
 }
 
-func (cmd *commandHandler) setGuildID(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	input := i.ApplicationCommandData().Options[0].StringValue()
-	cmd.guildID = input
-
-	margs := make([]interface{}, 0, len(input))
-	msgformat := ""
-
-	margs = append(margs, input)
-	msgformat += "> GuildID: %s\n"
-
-	if err := responseSetted(s, i, msgformat, margs); err != nil {
-		log.Println(err.Error())
-	}
-}
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
 	cmd.slug = input
@@ -102,6 +94,8 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 		log.Println(err.Error())
 	}
 }
+
+// FIXME: Add more args
 func (cmd *commandHandler) editInviteMessage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
 
@@ -116,3 +110,8 @@ func (cmd *commandHandler) editInviteMessage(s *discordgo.Session, i *discordgo.
 		log.Println(err.Error())
 	}
 }
+
+// TODO: Add new command: urlLogo
+// TODO: Add new command: editStreamMessage (with more args)
+// TODO: Add new command: Help
+// TODO: Add new command: About

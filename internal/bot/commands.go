@@ -8,6 +8,7 @@ var (
 	dmPermission                   = false
 	defaultMemberPermissions int64 = discordgo.PermissionAdministrator
 
+	// TODO: Change access commands to only administrator server or specic role
 	commands = []*discordgo.ApplicationCommand{
 		{
 			Name:                     "check",
@@ -35,22 +36,6 @@ var (
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Установить идентификатор ивента в конфигурацию бота для получения всех групп",
-			},
-		},
-		{
-			Name:        "set-server-id",
-			Description: "Set guild ID in configuration bot for getting members server",
-			Options: []*discordgo.ApplicationCommandOption{{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "slug",
-				Description: "Guild ID = Server ID",
-				Required:    true,
-			}},
-			NameLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "установить-идентификатор-сервера",
-			},
-			DescriptionLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "Установить guild ID в конфигурацию бота для получения доступа к списку пользователей",
 			},
 		},
 		{

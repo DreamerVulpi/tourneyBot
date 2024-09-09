@@ -13,7 +13,7 @@ import (
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
-func Start(cfg config.Config, t config.Template) error {
+func Start(cfg config.Config, l config.ConfigLobby) error {
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
@@ -31,18 +31,16 @@ func Start(cfg config.Config, t config.Template) error {
 	})
 
 	cmdHandler := commandHandler{
-		guildID:               cfg.Discord.GuildID,
-		client:                client,
-		stop:                  make(chan struct{}),
-		templateInviteMessage: t.InviteMessage,
-		templateStreamMessage: t.StreamMessage,
+		guildID:   cfg.Discord.GuildID,
+		client:    client,
+		stop:      make(chan struct{}),
+		dataLobby: l,
 	}
 
 	commandHandlers["check"] = cmdHandler.check
 	commandHandlers["start-sending"] = cmdHandler.start_sending
 	commandHandlers["stop-sending"] = cmdHandler.stop_sending
 	commandHandlers["set-event"] = cmdHandler.setEvent
-	commandHandlers["set-guild-id"] = cmdHandler.setGuildID
 	commandHandlers["edit-invite-message"] = cmdHandler.editInviteMessage
 
 	session.AddHandler(func(
@@ -54,11 +52,11 @@ func Start(cfg config.Config, t config.Template) error {
 		}
 	})
 
-	log.Println("Adding commands...")
+	log.Println("adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)
-		log.Printf("adding command...: %v\n", command.Name)
+		log.Printf("%v\n", command.Name)
 		if err != nil {
 			log.Printf("can't create '%v' command: %v\n", command.Name, err)
 		}
@@ -77,7 +75,7 @@ func Start(cfg config.Config, t config.Template) error {
 	log.Println("removing commands...")
 	for _, v := range registeredCommands {
 		err := session.ApplicationCommandDelete(cfg.Discord.AppID, cfg.Discord.GuildID, v.ID)
-		log.Printf("deleting command...: %v\n", v.Name)
+		log.Printf("%v\n", v.Name)
 		if err != nil {
 			fmt.Printf("Cannot delete '%v' command: %v\n", v.Name, err)
 		}
