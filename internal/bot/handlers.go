@@ -38,22 +38,6 @@ func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string)
 	return nil
 }
 
-func responseSetted(s *discordgo.Session, i *discordgo.InteractionCreate, msgformat string, margs []interface{}) error {
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf(
-				msgformat,
-				margs...,
-			),
-		},
-	})
-	if err != nil {
-		return errors.New("can't respond on message")
-	}
-	return nil
-}
-
 func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embed := []*discordgo.MessageEmbed{}
 	embed = append(embed, &discordgo.MessageEmbed{
@@ -64,8 +48,8 @@ func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionC
 			Name:    "TourneyBot",
 		},
 		Fields: []*discordgo.MessageEmbedField{
-			{Name: "**Slug**", Value: fmt.Sprintln("A slug is made of two parts, the tournament name and the event name. The format is this:```tournament/<tournament_name>/event/<event_name>```"), Inline: true},
-			{Value: cmd.slug},
+			{Name: "**Slug**", Value: fmt.Sprintln("A slug is made of two parts, the tournament name and the event name. The format is this:\n*tournament/<tournament_name>/event/<event_name>*"), Inline: true},
+			{Value: fmt.Sprintf("```%v```", cmd.slug)},
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -148,14 +132,33 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 	input := i.ApplicationCommandData().Options[0].StringValue()
 	cmd.slug = input
 
-	margs := make([]interface{}, 0, len(input))
-	msgformat := ""
-
-	margs = append(margs, input)
-	msgformat += "> SLUG: %s\n"
-
-	if err := responseSetted(s, i, msgformat, margs); err != nil {
-		log.Println(err.Error())
+	embed := []*discordgo.MessageEmbed{}
+	embed = append(embed, &discordgo.MessageEmbed{
+		Title: "Check data",
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			URL:     "https://github.com/DreamerVulpi/tourneybot",
+			Name:    "TourneyBot",
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: cmd.slug},
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://i.imgur.com/AfFp7pu.png",
+		},
+	})
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: embed,
+			},
+		},
+	)
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
 	}
 }
 
