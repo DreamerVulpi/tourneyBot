@@ -29,17 +29,17 @@ type RulesMatches struct {
 	Crossplatform bool   `toml:"crossplatform"`
 }
 
-type Stream struct {
+type StreamLobby struct {
 	Area          string `toml:"area"`
 	Language      string `toml:"language"`
-	Crossplatform bool   `toml:"crossplatform"`
 	Conn          string `toml:"connection"`
+	Crossplatform bool   `toml:"crossplatform"`
 	Passcode      string `toml:"passcode"`
 }
 
 type ConfigLobby struct {
 	Rules  RulesMatches `toml:"rules"`
-	Stream Stream       `toml:"stream"`
+	Stream StreamLobby  `toml:"stream"`
 }
 
 func LoadConfig(file string) (Config, error) {

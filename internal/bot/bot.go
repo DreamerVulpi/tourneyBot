@@ -42,6 +42,13 @@ func Start(cfg config.Config, l config.ConfigLobby) error {
 			Crossplatform: l.Rules.Crossplatform,
 			Stage:         l.Rules.Stage,
 		},
+		StreamLobby: config.StreamLobby{
+			Area:          l.Stream.Area,
+			Language:      l.Stream.Language,
+			Crossplatform: l.Stream.Crossplatform,
+			Conn:          l.Stream.Conn,
+			Passcode:      l.Stream.Passcode,
+		},
 	}
 
 	commandHandlers["check"] = cmdHandler.check
@@ -49,6 +56,7 @@ func Start(cfg config.Config, l config.ConfigLobby) error {
 	commandHandlers["stop-sending"] = cmdHandler.stop_sending
 	commandHandlers["set-event"] = cmdHandler.setEvent
 	commandHandlers["edit-rules"] = cmdHandler.editRuleMatches
+	commandHandlers["edit-stream-lobby"] = cmdHandler.editStreamLobby
 
 	session.AddHandler(func(
 		s *discordgo.Session,

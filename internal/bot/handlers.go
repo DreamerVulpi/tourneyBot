@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -20,6 +19,7 @@ type commandHandler struct {
 	client       *startgg.Client
 	dataLobby    config.ConfigLobby
 	RulesMatches config.RulesMatches
+	StreamLobby  config.StreamLobby
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -101,10 +101,10 @@ func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionC
 		},
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "**Stream lobby data**"},
-			{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.dataLobby.Stream.Area)},
-			{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.dataLobby.Stream.Language)},
-			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.dataLobby.Stream.Crossplatform)},
-			{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.dataLobby.Stream.Passcode)},
+			{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Area)},
+			{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Language)},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
+			{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.StreamLobby.Passcode)},
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -143,6 +143,7 @@ func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.Inter
 	s.ChannelMessageSend(i.ChannelID, "Stopped!")
 }
 
+// TODO: PARSE LINK ON EVENT USING PACKAGE "URL"
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	input := i.ApplicationCommandData().Options[0].StringValue()
 	cmd.slug = input
@@ -159,68 +160,123 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 }
 
 // TODO: Refactor code
+
 func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	args := i.ApplicationCommandData().Options
-
-	margs := make([]interface{}, 0, len(args))
-	msgformat := ""
 
 	format := int(args[0].IntValue())
 	if format <= 10 {
 		cmd.RulesMatches.Format = format
-		margs = append(margs, format)
-	}
-
-	listStages := map[string]string{
-		"arena":                         "Arena",
-		"arena (underground)":           "Arena (Underground)",
-		"urban square":                  "Urban Square",
-		"urban square (evening)":        "Urban Square (Evening)",
-		"yakushima":                     "Yakushima",
-		"coliseum of fate":              "Coliseum of Fate",
-		"rebel hangar":                  "Rebel Hanger",
-		"fallen destiny":                "Fallen Destiny",
-		"descent into subconsciousness": "Descent into Subconsciousness",
-		"sanctum":                       "Sanctum",
-		"into the stratpsphere":         "Into the Stratosphere",
-		"ortiz farm":                    "Ortiz Farm",
-		"celebration on the seine":      "Celebration on the Seine",
-		"secluded training ground":      "Secluded Training Ground",
-		"elegant palace":                "Elegant Palace",
-		"midnight siege":                "Midnight Siege",
-		"seaside resort":                "Seaside Resort",
-		"any":                           "Any",
-	}
-
-	stage := args[1].StringValue()
-	if len(listStages[strings.ToLower(stage)]) != 0 {
-		cmd.RulesMatches.Stage = listStages[strings.ToLower(stage)]
-		margs = append(margs, stage)
 	}
 
 	rounds := int(args[2].IntValue())
 	if rounds <= 5 {
 		cmd.RulesMatches.Rounds = rounds
-		margs = append(margs, rounds)
 	}
 
 	duration := int(args[3].IntValue())
 	if duration <= 99 {
 		cmd.RulesMatches.Duration = duration
-		margs = append(margs, duration)
 	}
 
+	cmd.RulesMatches.Stage = args[1].StringValue()
 	cmd.RulesMatches.Crossplatform = args[4].BoolValue()
-	margs = append(margs, cmd.RulesMatches.Crossplatform)
 
-	msgformat += "> Saved data: %s\n"
+	embed := []*discordgo.MessageEmbed{}
+	embed = append(embed, &discordgo.MessageEmbed{
+		Title: "Check data",
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			URL:     "https://github.com/DreamerVulpi/tourneybot",
+			Name:    "TourneyBot",
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{Name: "**Rules matches**", Value: ""},
+			{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.RulesMatches.Format)},
+			{Name: "**Stage**", Value: cmd.RulesMatches.Stage},
+			{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Rounds)},
+			{Name: "**Time in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration) + " seconds"},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform)},
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://i.imgur.com/AfFp7pu.png",
+		},
+	})
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: embed,
+			},
+		},
+	)
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
+	}
+}
 
-	if err := responseSetted(s, i, msgformat, margs); err != nil {
-		log.Println(err.Error())
+// TODO: Refactor code
+func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	args := i.ApplicationCommandData().Options
+
+	area := args[0].StringValue()
+	if len(area) != 0 {
+		cmd.StreamLobby.Area = area
+	}
+
+	lang := args[1].StringValue()
+	if len(lang) != 0 {
+		cmd.StreamLobby.Language = lang
+	}
+
+	conn := args[2].StringValue()
+	if len(conn) != 0 {
+		cmd.StreamLobby.Conn = args[2].StringValue()
+	}
+
+	cmd.StreamLobby.Crossplatform = args[3].BoolValue()
+
+	passcode := args[4].StringValue()
+	if len(passcode) <= 4 {
+		cmd.StreamLobby.Passcode = passcode
+	}
+
+	embed := []*discordgo.MessageEmbed{}
+	embed = append(embed, &discordgo.MessageEmbed{
+		Title: "Stream lobby",
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			URL:     "https://github.com/DreamerVulpi/tourneybot",
+			Name:    "TourneyBot",
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.StreamLobby.Area)},
+			{Name: "**Language**", Value: cmd.RulesMatches.Stage},
+			{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Conn)},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
+			{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Passcode)},
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://i.imgur.com/AfFp7pu.png",
+		},
+	})
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: embed,
+			},
+		},
+	)
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
 	}
 }
 
 // TODO: Add new command: urlLogo
-// TODO: Add new command: editStreamMessage (with more args)
 // TODO: Add new command: Help
 // TODO: Add new command: About

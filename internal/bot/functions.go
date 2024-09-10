@@ -74,12 +74,8 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 				{Name: "У вас есть 10 минут чтобы отметиться до автоматической дисквалификации", Value: ""},
 
 				{Name: "**Настройки согласно правилам**", Value: ""},
-				{Name: ""},
 				{Name: "**Формат**", Value: fmt.Sprintf("ФТ%v", c.dataLobby.Rules.Format) + fmt.Sprintf(" (До %v побед)", c.dataLobby.Rules.Format), Inline: true},
-
 				{Name: "**Карта**", Value: "Выбирается случайным образом ВСЕГДА если оппонент не продолжил сет", Inline: true},
-				{Name: ""},
-
 				{Name: "**Раундов в 1 матче**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Rounds), Inline: true},
 				{Name: "**Время в 1 раунде**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Duration) + " секунд", Inline: true},
 				{Name: "**Кроссплатформенная игра**", Value: crossplay, Inline: true},
