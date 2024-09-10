@@ -51,22 +51,10 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	var t discordgo.MessageEmbed
 	if len(player.streamSourse) == 0 {
 		var crossplay string
-		if c.dataLobby.Local.CrossPlay != "true" {
+		if !c.dataLobby.Rules.Crossplatform {
 			crossplay = "отключена"
 		} else {
 			crossplay = "включена"
-		}
-		var conn string
-		if c.dataLobby.Local.Conn == "no restrictions" {
-			conn = "нет ограничений"
-		}
-		var lang string
-		if c.dataLobby.Local.Language == "any" {
-			lang = "любой"
-		}
-		var area string
-		if c.dataLobby.Local.Area == "any" {
-			area = "любой"
 		}
 		t = discordgo.MessageEmbed{
 			Title:       fmt.Sprintf("Турнир **%v**", player.tournament),
@@ -85,22 +73,15 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 				{Name: "**Ссылка на check-in**", Value: link},
 				{Name: "У вас есть 10 минут чтобы отметиться до автоматической дисквалификации", Value: ""},
 
-				{Name: "**Настройки лобби согласно правилам**", Value: ""},
-				{Name: "", Value: ""},
-				{Name: "**Регион**", Value: area, Inline: true},
-				{Name: "**Язык**", Value: lang, Inline: true},
-				{Name: "**Тип соединения**", Value: conn, Inline: true},
+				{Name: "**Настройки согласно правилам**", Value: ""},
 				{Name: ""},
-
-				{Name: "**Настройки боев**", Value: ""},
-				{Name: ""},
-				{Name: "**Формат**", Value: fmt.Sprintf("ФТ%v", c.dataLobby.Local.Victory) + fmt.Sprintf(" (До %v побед)", c.dataLobby.Local.Victory), Inline: true},
+				{Name: "**Формат**", Value: fmt.Sprintf("ФТ%v", c.dataLobby.Rules.Format) + fmt.Sprintf(" (До %v побед)", c.dataLobby.Rules.Format), Inline: true},
 
 				{Name: "**Карта**", Value: "Выбирается случайным образом ВСЕГДА если оппонент не продолжил сет", Inline: true},
 				{Name: ""},
 
-				{Name: "**Раундов в 1 матче**", Value: fmt.Sprintf("%v", c.dataLobby.Local.Rounds), Inline: true},
-				{Name: "**Время в 1 раунде**", Value: fmt.Sprintf("%v", c.dataLobby.Local.Duration) + " секунд", Inline: true},
+				{Name: "**Раундов в 1 матче**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Rounds), Inline: true},
+				{Name: "**Время в 1 раунде**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Duration) + " секунд", Inline: true},
 				{Name: "**Кроссплатформенная игра**", Value: crossplay, Inline: true},
 			},
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -111,21 +92,21 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	}
 	if len(player.streamSourse) > 0 {
 		var lang string
-		if c.dataLobby.Local.Language == "any" {
+		if c.dataLobby.Stream.Language == "any" {
 			lang = "любой"
 		}
 		var area string
-		if c.dataLobby.Local.Area == "any" {
+		if c.dataLobby.Stream.Area == "any" {
 			area = "любой"
 		}
 		var crossplay string
-		if c.dataLobby.Local.CrossPlay != "true" {
+		if !c.dataLobby.Stream.Crossplatform {
 			crossplay = "отключена"
 		} else {
 			crossplay = "включена"
 		}
 		var conn string
-		if c.dataLobby.Local.Conn == "no restrictions" {
+		if c.dataLobby.Stream.Conn == "no restrictions" {
 			conn = "нет ограничений"
 		}
 		t = discordgo.MessageEmbed{

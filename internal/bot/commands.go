@@ -60,22 +60,60 @@ var (
 		},
 
 		{
-			Name:        "edit-invite-message",
-			Description: "Edit template invite message",
-			Options: []*discordgo.ApplicationCommandOption{{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "template",
-				Description: "edited template",
-				Required:    true,
-				DescriptionLocalizations: map[discordgo.Locale]string{
-					discordgo.Russian: "Отредактированный шаблон",
+			Name:        "edit-rules",
+			Description: "Edit rule matches",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "format",
+					Description: "First to ? wins",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "До ? побед",
+					},
 				},
-			}},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "map",
+					Description: "Name map | Random (Example: yakushima | any and etc)",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Название карты | Любая (Ответ только по английски. К примеру: yakushima | any и т.д)",
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "rounds",
+					Description: "Rounds in 1 match",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Раундов в 1 матче",
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "duration",
+					Description: "Seconds in 1 round",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Секунд в 1 раунде",
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "crossplatformplay",
+					Description: "Cross-platform game support (true | false)",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Поддержка кроссплатформенной игры (true | false)",
+					},
+				},
+			},
 			NameLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "редактировать-инвайт-сообщения",
+				discordgo.Russian: "редактировать-правила-матчей",
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "Редактировать шаблон инвайт-сообщения",
+				discordgo.Russian: "Редактировать правила матчей в сете",
 			},
 		},
 	}

@@ -35,13 +35,20 @@ func Start(cfg config.Config, l config.ConfigLobby) error {
 		client:    client,
 		stop:      make(chan struct{}),
 		dataLobby: l,
+		RulesMatches: config.RulesMatches{
+			Format:        l.Rules.Format,
+			Rounds:        l.Rules.Rounds,
+			Duration:      l.Rules.Duration,
+			Crossplatform: l.Rules.Crossplatform,
+			Stage:         l.Rules.Stage,
+		},
 	}
 
 	commandHandlers["check"] = cmdHandler.check
 	commandHandlers["start-sending"] = cmdHandler.start_sending
 	commandHandlers["stop-sending"] = cmdHandler.stop_sending
 	commandHandlers["set-event"] = cmdHandler.setEvent
-	commandHandlers["edit-invite-message"] = cmdHandler.editInviteMessage
+	commandHandlers["edit-rules"] = cmdHandler.editRuleMatches
 
 	session.AddHandler(func(
 		s *discordgo.Session,
