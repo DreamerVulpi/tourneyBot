@@ -13,7 +13,7 @@ import (
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
-func Start(cfg config.Config, l config.ConfigLobby) error {
+func Start(cfg config.Config, t config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
@@ -34,21 +34,22 @@ func Start(cfg config.Config, l config.ConfigLobby) error {
 		guildID:   cfg.Discord.GuildID,
 		client:    client,
 		stop:      make(chan struct{}),
-		dataLobby: l,
+		dataLobby: t,
 		RulesMatches: config.RulesMatches{
-			Format:        l.Rules.Format,
-			Rounds:        l.Rules.Rounds,
-			Duration:      l.Rules.Duration,
-			Crossplatform: l.Rules.Crossplatform,
-			Stage:         l.Rules.Stage,
+			Format:        t.Rules.Format,
+			Rounds:        t.Rules.Rounds,
+			Duration:      t.Rules.Duration,
+			Crossplatform: t.Rules.Crossplatform,
+			Stage:         t.Rules.Stage,
 		},
 		StreamLobby: config.StreamLobby{
-			Area:          l.Stream.Area,
-			Language:      l.Stream.Language,
-			Crossplatform: l.Stream.Crossplatform,
-			Conn:          l.Stream.Conn,
-			Passcode:      l.Stream.Passcode,
+			Area:          t.Stream.Area,
+			Language:      t.Stream.Language,
+			Crossplatform: t.Stream.Crossplatform,
+			Conn:          t.Stream.Conn,
+			Passcode:      t.Stream.Passcode,
 		},
+		Bot: t.Bot,
 	}
 
 	commandHandlers["check"] = cmdHandler.check

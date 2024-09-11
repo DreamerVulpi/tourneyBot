@@ -17,9 +17,10 @@ type commandHandler struct {
 	stop         chan struct{}
 	m            *discordgo.MessageCreate
 	client       *startgg.Client
-	dataLobby    config.ConfigLobby
+	dataLobby    config.ConfigTournament
 	RulesMatches config.RulesMatches
 	StreamLobby  config.StreamLobby
+	Bot          config.Bot
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -38,12 +39,13 @@ func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string)
 	return nil
 }
 
+// TODO: Refactor code
 func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embed := []*discordgo.MessageEmbed{}
 	embed = append(embed, &discordgo.MessageEmbed{
 		Title: "Check data",
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
@@ -53,46 +55,46 @@ func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionC
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 
 	embed = append(embed, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "**Rules matches**"},
-			{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format)},
-			{Name: "**Map**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Stage)},
+			{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format), Inline: true},
+			{Name: "**Stage**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Stage), Inline: true},
 			{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Rounds)},
-			{Name: "**Seconds in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration)},
-			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform)},
+			{Name: "**Seconds in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration), Inline: true},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform), Inline: true},
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 
 	embed = append(embed, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "**Stream lobby data**"},
-			{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Area)},
-			{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Language)},
+			{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Area), Inline: true},
+			{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Language), Inline: true},
 			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
-			{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.StreamLobby.Passcode)},
+			{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.StreamLobby.Passcode), Inline: true},
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 
@@ -136,7 +138,7 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 	embed = append(embed, &discordgo.MessageEmbed{
 		Title: "Check data",
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
@@ -145,7 +147,7 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 	err := s.InteractionRespond(
@@ -189,21 +191,21 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 	embed = append(embed, &discordgo.MessageEmbed{
 		Title: "Check data",
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "**Rules matches**", Value: ""},
-			{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.RulesMatches.Format)},
-			{Name: "**Stage**", Value: cmd.RulesMatches.Stage},
+			{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.RulesMatches.Format), Inline: true},
+			{Name: "**Stage**", Value: cmd.RulesMatches.Stage, Inline: true},
 			{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Rounds)},
 			{Name: "**Time in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration) + " seconds"},
 			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform)},
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 	err := s.InteractionRespond(
@@ -250,7 +252,7 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 	embed = append(embed, &discordgo.MessageEmbed{
 		Title: "Stream lobby",
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: "https://i.imgur.com/AfFp7pu.png",
+			IconURL: cmd.Bot.Img,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
@@ -263,7 +265,7 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "https://i.imgur.com/AfFp7pu.png",
+			URL: cmd.Bot.LogoTournament,
 		},
 	})
 	err := s.InteractionRespond(

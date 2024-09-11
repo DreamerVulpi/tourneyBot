@@ -10,10 +10,14 @@ import (
 
 func main() {
 	cfg, err := config.LoadConfig("config/config.toml")
-	lobby, err := config.LoadLobby("config/lobby.toml")
 	if err != nil {
 		log.Println(errors.New("not loaded: ").Error() + err.Error())
 	} else {
-		bot.Start(cfg, lobby)
+		tournament, err := config.LoadTournament("config/tournament.toml")
+		if err != nil {
+			log.Println(errors.New("not loaded: ").Error() + err.Error())
+		} else {
+			bot.Start(cfg, tournament)
+		}
 	}
 }
