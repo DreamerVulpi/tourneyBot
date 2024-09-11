@@ -282,6 +282,37 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 	}
 }
 
-// TODO: Add new command: urlLogo
+func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	arg := i.ApplicationCommandData().Options[0].StringValue()
+	cmd.Bot.LogoTournament = arg
+	embed := []*discordgo.MessageEmbed{}
+	embed = append(embed, &discordgo.MessageEmbed{
+		Title: "Logo Tournament",
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: cmd.Bot.Img,
+			URL:     "https://github.com/DreamerVulpi/tourneybot",
+			Name:    "TourneyBot",
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{Name: "**Url**", Value: fmt.Sprintf("%v", cmd.Bot.LogoTournament)},
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: cmd.Bot.LogoTournament,
+		},
+	})
+	err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: embed,
+			},
+		},
+	)
+	if err != nil {
+		log.Println(errors.New("can't respond on message"))
+	}
+}
+
 // TODO: Add new command: Help
-// TODO: Add new command: About

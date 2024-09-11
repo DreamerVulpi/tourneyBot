@@ -58,6 +58,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 	commandHandlers["set-event"] = cmdHandler.setEvent
 	commandHandlers["edit-rules"] = cmdHandler.editRuleMatches
 	commandHandlers["edit-stream-lobby"] = cmdHandler.editStreamLobby
+	commandHandlers["edit-logo-tournament"] = cmdHandler.editLogoTournament
 
 	session.AddHandler(func(
 		s *discordgo.Session,

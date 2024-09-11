@@ -391,6 +391,25 @@ var (
 				discordgo.Russian: "Редактировать конфигурацию лобби для стрима",
 			},
 		},
+		{
+			Name:        "edit-logo-tournament",
+			Description: "Edit link to logo tournament",
+			Options: []*discordgo.ApplicationCommandOption{{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "url",
+				Description: "Link to logo tournament",
+				Required:    true,
+				DescriptionLocalizations: map[discordgo.Locale]string{
+					discordgo.Russian: "Cсылка на логотип турнира",
+				},
+			}},
+			NameLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "редактировать-лого-турнира",
+			},
+			DescriptionLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "Редактировать ссылку на логотип турнира",
+			},
+		},
 	}
 )
 
