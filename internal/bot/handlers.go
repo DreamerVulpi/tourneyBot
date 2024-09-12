@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -112,15 +115,26 @@ func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.Inter
 	s.ChannelMessageSend(i.ChannelID, "Stopped!")
 }
 
-// TODO: PARSE LINK ON EVENT USING PACKAGE "URL"
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	cmd.slug = i.ApplicationCommandData().Options[0].StringValue()
+	u, err := url.Parse(i.ApplicationCommandData().Options[0].StringValue())
+	if err != nil {
+		log.Println(err)
+	}
+
+	c := strings.Replace(u.Path, "/", "", 1)
+	arr := strings.SplitN(c, "/", 5)
 
 	embed := []*discordgo.MessageEmbed{}
-	embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
-		{Name: "**Slug**", Value: cmd.slug},
-	}))
-
+	if arr[0] != "tournament" || arr[2] != "event" {
+		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: "Your input data isn't correct"},
+		}))
+	} else {
+		cmd.slug = arr[0] + "/" + arr[1] + "/" + arr[2] + "/" + arr[3]
+		embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: cmd.slug},
+		}))
+	}
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
 		log.Println(errors.New("setEvent: can't respond on message"))
 	}
@@ -130,24 +144,17 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 	args := i.ApplicationCommandData().Options
 
 	format := int(args[0].IntValue())
-	if format <= 10 {
-		cmd.RulesMatches.Format = format
-	}
-
+	stage := args[1].StringValue()
 	rounds := int(args[2].IntValue())
-	if rounds <= 5 {
-		cmd.RulesMatches.Rounds = rounds
-	}
-
 	duration := int(args[3].IntValue())
-	if duration <= 99 {
-		cmd.RulesMatches.Duration = duration
-	}
-
-	cmd.RulesMatches.Stage = args[1].StringValue()
-	cmd.RulesMatches.Crossplatform = args[4].BoolValue()
 
 	embed := []*discordgo.MessageEmbed{}
+
+	cmd.RulesMatches.Format = format
+	cmd.RulesMatches.Stage = stage
+	cmd.RulesMatches.Rounds = rounds
+	cmd.RulesMatches.Duration = duration
+	cmd.RulesMatches.Crossplatform = args[4].BoolValue()
 	embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
 		{Name: "**Rules matches**", Value: ""},
 		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.RulesMatches.Format), Inline: true},
@@ -166,35 +173,32 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 	args := i.ApplicationCommandData().Options
 
 	area := args[0].StringValue()
-	if len(area) != 0 {
-		cmd.StreamLobby.Area = area
-	}
-
 	lang := args[1].StringValue()
-	if len(lang) != 0 {
-		cmd.StreamLobby.Language = lang
-	}
-
 	conn := args[2].StringValue()
-	if len(conn) != 0 {
-		cmd.StreamLobby.Conn = args[2].StringValue()
-	}
-
-	cmd.StreamLobby.Crossplatform = args[3].BoolValue()
-
+	crossplatform := args[3].BoolValue()
 	passcode := args[4].StringValue()
-	if len(passcode) <= 4 {
-		cmd.StreamLobby.Passcode = passcode
-	}
+	pc := regexp.MustCompile(`[0-9]+`).FindAllString(passcode, -1)[0]
 
 	embed := []*discordgo.MessageEmbed{}
-	embed = append(embed, cmd.messageEmbed("Stream lobby", []*discordgo.MessageEmbedField{
-		{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.StreamLobby.Area)},
-		{Name: "**Language**", Value: cmd.RulesMatches.Stage},
-		{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Conn)},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
-		{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Passcode)},
-	}))
+
+	if len(pc) != 4 {
+		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
+			{Name: "**Stream lobby**", Value: "Your input data isn't correct"},
+		}))
+	} else {
+		cmd.StreamLobby.Area = area
+		cmd.StreamLobby.Language = lang
+		cmd.StreamLobby.Conn = conn
+		cmd.StreamLobby.Crossplatform = crossplatform
+		cmd.StreamLobby.Passcode = pc
+		embed = append(embed, cmd.messageEmbed("Stream lobby", []*discordgo.MessageEmbedField{
+			{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.StreamLobby.Area)},
+			{Name: "**Language**", Value: cmd.RulesMatches.Stage},
+			{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Conn)},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
+			{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Passcode)},
+		}))
+	}
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
 		log.Println(errors.New("editStreamLobby: can't respond on message"))

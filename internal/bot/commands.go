@@ -28,9 +28,12 @@ var (
 			Description: "Set event in configuration bot for getting all phaseGroups",
 			Options: []*discordgo.ApplicationCommandOption{{
 				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "slug",
-				Description: "Format: tournament/<tournament_name>/event/<event_name>",
+				Name:        "link",
+				Description: "Link on event must including path: tournament/<tournament_name>/event/<event_name>",
 				Required:    true,
+				DescriptionLocalizations: map[discordgo.Locale]string{
+					discordgo.Russian: "Cсылка на ивент должна включать в себя путь: tournament/<название_турнира>/event/<название_ивента>",
+				},
 			}},
 			NameLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "установить-ивент",
