@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"log"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -16,9 +17,14 @@ type ConfigDiscordBot struct {
 	AppID   string `toml:"appID"`
 }
 
+type ConfigRolesIdDiscord struct {
+	Ru string `toml:"ru"`
+}
+
 type Config struct {
-	Startgg ConfigStartGG    `toml:"startgg"`
-	Discord ConfigDiscordBot `toml:"discordbot"`
+	Startgg ConfigStartGG        `toml:"startgg"`
+	Discord ConfigDiscordBot     `toml:"discordbot"`
+	Roles   ConfigRolesIdDiscord `toml:"roles"`
 }
 
 type RulesMatches struct {
@@ -27,6 +33,7 @@ type RulesMatches struct {
 	Rounds        int    `toml:"rounds"`
 	Duration      int    `toml:"duration"`
 	Crossplatform bool   `toml:"crossplatform"`
+	Waiting       int    `toml:"waiting"`
 }
 
 type StreamLobby struct {
@@ -37,15 +44,14 @@ type StreamLobby struct {
 	Passcode      string `toml:"passcode"`
 }
 
-type Bot struct {
-	Img            string `toml:"img"`
-	LogoTournament string `toml:"logoTournament"`
+type Logo struct {
+	Img string `toml:"img"`
 }
 
 type ConfigTournament struct {
 	Rules  RulesMatches `toml:"rules"`
 	Stream StreamLobby  `toml:"stream"`
-	Bot    Bot          `toml:"bot"`
+	Logo   Logo         `toml:"logo"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -58,13 +64,16 @@ func LoadConfig(file string) (Config, error) {
 
 	switch {
 	case len(cfg.Startgg.Token) == 0:
-		return Config{}, errors.New("startGG token is empty")
+		return Config{}, errors.New("startGG: token is empty")
 	case len(cfg.Discord.Token) == 0:
-		return Config{}, errors.New("discord token is empty")
+		return Config{}, errors.New("discord: token is empty")
 	case len(cfg.Discord.AppID) == 0:
-		return Config{}, errors.New("discord appID is empty")
+		return Config{}, errors.New("discord: appID is empty")
 	case len(cfg.Discord.GuildID) == 0:
-		return Config{}, errors.New("discord guildID is empty")
+		return Config{}, errors.New("discord: guildID is empty")
+	case len(cfg.Roles.Ru) == 0:
+		log.Println(errors.New("roles: ru locale is empty").Error())
+		return cfg, nil
 	default:
 		return cfg, nil
 	}
@@ -95,10 +104,11 @@ func LoadTournament(file string) (ConfigTournament, error) {
 		return ConfigTournament{}, errors.New("stream: field connection is empty")
 	case len(l.Stream.Passcode) == 0:
 		return ConfigTournament{}, errors.New("stream: field passcode is empty")
-	case len(l.Bot.Img) == 0:
-		return ConfigTournament{}, errors.New("bot: field img is empty")
-	case len(l.Bot.LogoTournament) == 0:
-		return ConfigTournament{}, errors.New("bot: field logoTournament is empty")
+	case l.Rules.Waiting > 30 || l.Rules.Waiting <= 0:
+		return ConfigTournament{}, errors.New("waiting time: isn't correct")
+	case len(l.Logo.Img) == 0:
+		log.Println(errors.New("tournament: logo link is empty").Error())
+		return l, nil
 	default:
 		return l, nil
 	}

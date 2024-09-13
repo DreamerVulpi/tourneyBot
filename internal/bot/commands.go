@@ -5,17 +5,12 @@ import (
 	"github.com/dreamervulpi/tourneybot/config"
 )
 
-var (
-	dmPermission                   = false
-	defaultMemberPermissions int64 = discordgo.PermissionAdministrator
-
+func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 	// TODO: Change access commands to only administrator server or specic role
-	commands = []*discordgo.ApplicationCommand{
+	return []*discordgo.ApplicationCommand{
 		{
-			Name:                     "check",
-			Description:              "Check variables startgg, discord and bot.",
-			DMPermission:             &dmPermission,
-			DefaultMemberPermissions: &defaultMemberPermissions,
+			Name:        "check",
+			Description: "Check variables startgg, discord and bot.",
 			NameLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "проверка",
 			},
@@ -150,11 +145,11 @@ var (
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "map",
-					Description: "Name map | Random",
+					Name:        "stage",
+					Description: "Name stage | Random",
 					Required:    true,
 					DescriptionLocalizations: map[discordgo.Locale]string{
-						discordgo.Russian: "Название карты | Любая",
+						discordgo.Russian: "Название арены | Любая",
 					},
 					Choices: append(choice(config.ListStages), &discordgo.ApplicationCommandOptionChoice{
 						Name: "Any",
@@ -414,7 +409,7 @@ var (
 			},
 		},
 	}
-)
+}
 
 func choice(list map[string]string) []*discordgo.ApplicationCommandOptionChoice {
 	var result []*discordgo.ApplicationCommandOptionChoice

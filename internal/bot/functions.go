@@ -12,11 +12,11 @@ import (
 	"github.com/dreamervulpi/tourneybot/internal/startgg"
 )
 
-type playerData struct {
+type PlayerData struct {
 	tournament   string
 	setID        int64
-	discordID    string
 	streamSourse string
+	user         discordUser
 	opponent     opponentData
 }
 
@@ -26,18 +26,51 @@ type opponentData struct {
 	tekkenID  string
 }
 
-func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (string, error) {
-	user, err := s.GuildMembersSearch(c.guildID, nickname, 1)
-	if err != nil {
-		return "", err
-	}
-	return (*user[0]).User.ID, nil
+type discordUser struct {
+	discordID string
+	locales   []string
 }
 
-// TODO: Refactor code
-// TODO: Add can use different languages
-func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
-	channel, err := s.UserChannelCreate(player.discordID)
+func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (discordUser, error) {
+	member, err := s.GuildMembersSearch(c.guildID, nickname, 1)
+	if err != nil {
+		return discordUser{}, err
+	}
+
+	if len(member) != 1 {
+		return discordUser{}, fmt.Errorf("searchContactDiscord: not finded %v", nickname)
+	}
+
+	// Get list rolesId including in locale (en is default)
+	roles := []string{}
+	for _, roleId := range (*member[0]).Roles {
+		if roleId == c.rolesIdList.Ru {
+			roles = append(roles, roleId)
+		}
+	}
+	return discordUser{
+		discordID: (*member[0]).User.ID,
+		locales:   roles,
+	}, nil
+}
+
+func (c *commandHandler) templateMessage(fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: c.logo,
+			URL:     "https://github.com/DreamerVulpi/tourneybot",
+			Name:    "TourneyBot",
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: c.logoTournament,
+		},
+		Fields: fields,
+	}
+}
+
+func (c *commandHandler) sendMessage(s *discordgo.Session, player PlayerData) {
+	channel, err := s.UserChannelCreate(player.user.discordID)
 	if err != nil {
 		log.Println("error creating channel:", err)
 		s.ChannelMessageSend(
@@ -48,108 +81,22 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player playerData) {
 	}
 
 	link := fmt.Sprint("https://www.start.gg/", c.slug, "/set/", player.setID)
-	var t discordgo.MessageEmbed
-	if len(player.streamSourse) == 0 {
-		var crossplay string
-		if !c.dataLobby.Rules.Crossplatform {
-			crossplay = "отключена"
-		} else {
-			crossplay = "включена"
-		}
-		t = discordgo.MessageEmbed{
-			Title:       fmt.Sprintf("Турнир **%v**", player.tournament),
-			Description: "Приглашение на турнир со всей необходимой информацией.\n\n*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*",
-			Author: &discordgo.MessageEmbedAuthor{
-				IconURL: "https://i.imgur.com/AfFp7pu.png",
-				URL:     "https://github.com/DreamerVulpi/tourneybot",
-				Name:    "TourneyBot",
-			},
-			Fields: []*discordgo.MessageEmbedField{
-				{Name: "**Данные твоего оппонента**", Value: ""},
-				{Name: "**Никнейм**", Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
-				{Name: "**Tekken ID**", Value: fmt.Sprintf("```%v```", player.opponent.tekkenID), Inline: true},
-				{Name: "**Discord**", Value: fmt.Sprintf("<@%v>", player.opponent.discordID), Inline: true},
 
-				{Name: "**Ссылка на check-in**", Value: link},
-				{Name: "У вас есть 10 минут чтобы отметиться до автоматической дисквалификации", Value: ""},
-
-				{Name: "**Настройки согласно правилам**", Value: ""},
-				{Name: "**Формат**", Value: fmt.Sprintf("ФТ%v", c.dataLobby.Rules.Format) + fmt.Sprintf(" (До %v побед)", c.dataLobby.Rules.Format), Inline: true},
-				{Name: "**Карта**", Value: "Выбирается случайным образом ВСЕГДА если оппонент не продолжил сет", Inline: true},
-				{Name: "**Раундов в 1 матче**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Rounds), Inline: true},
-				{Name: "**Время в 1 раунде**", Value: fmt.Sprintf("%v", c.dataLobby.Rules.Duration) + " секунд", Inline: true},
-				{Name: "**Кроссплатформенная игра**", Value: crossplay, Inline: true},
-			},
-			Timestamp: time.Now().Format(time.RFC3339),
-			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: "https://i.imgur.com/AfFp7pu.png",
-			},
+	if len(player.user.locales) != 1 {
+		c.msgDefault(s, player, channel, link)
+	} else {
+		if player.user.locales[0] == c.rolesIdList.Ru {
+			c.msgRu(s, player, channel, link)
 		}
-	}
-	if len(player.streamSourse) > 0 {
-		var lang string
-		if c.dataLobby.Stream.Language == "any" {
-			lang = "любой"
-		}
-		var area string
-		if c.dataLobby.Stream.Area == "any" {
-			area = "любой"
-		}
-		var crossplay string
-		if !c.dataLobby.Stream.Crossplatform {
-			crossplay = "отключена"
-		} else {
-			crossplay = "включена"
-		}
-		var conn string
-		if c.dataLobby.Stream.Conn == "no restrictions" {
-			conn = "нет ограничений"
-		}
-		t = discordgo.MessageEmbed{
-			Title:       fmt.Sprintf("Турнир: **%v**", player.tournament),
-			Description: "Приглашение на матч проводящийся на прямой трансляции. Необходимо зайти в ниже указанное лобби и ожидать команды организатора на стриме дальнейшних действий.\n\n*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*",
-			Author: &discordgo.MessageEmbedAuthor{
-				IconURL: "https://i.imgur.com/AfFp7pu.png",
-				URL:     "https://github.com/DreamerVulpi/tourneybot",
-				Name:    "TourneyBot",
-			},
-			Fields: []*discordgo.MessageEmbedField{
-				{Name: "**Ссылка на check-in**", Value: ""},
-				{Name: "*У вас есть 10 минут чтобы отметиться до автоматической дисквалификации*"},
-				{Name: "", Value: link, Inline: true},
-
-				{Name: "**Параметры для поиска лобби**", Value: ""},
-				{Name: "", Value: ""},
-				{Name: "**Регион**", Value: area, Inline: true},
-				{Name: "**Язык**", Value: lang, Inline: true},
-				{Name: "**Тип соединения**", Value: conn, Inline: true},
-				{Name: "**Кроссплатформенная игра**", Value: crossplay, Inline: true},
-				{Name: "**Пароль**", Value: fmt.Sprintf("```%v```", c.dataLobby.Stream.Passcode), Inline: true},
-			},
-			Timestamp: time.Now().Format(time.RFC3339),
-			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: "https://i.imgur.com/AfFp7pu.png",
-			},
-		}
-	}
-
-	_, err = s.ChannelMessageSendEmbed(channel.ID, &t)
-	if err != nil {
-		fmt.Println("error sending DM message:", err)
-		s.ChannelMessageSend(
-			c.m.ChannelID,
-			"Failed to send you a DM. "+
-				"Did you disable DM in your privacy settings?",
-		)
 	}
 }
 
-func (c *commandHandler) SendingMessages(s *discordgo.Session) {
+func (c *commandHandler) Process(s *discordgo.Session) {
 	for {
 		select {
 		default:
 			log.Println("sending messages: STARTED!")
-			if err := c.SendProcess(s); err != nil {
+			if err := c.SendingMessages(s); err != nil {
 				return
 			}
 			log.Println("sending messages: DONE!")
@@ -163,7 +110,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) {
 	}
 }
 
-func (c *commandHandler) SendProcess(s *discordgo.Session) error {
+func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 	tournament, err := c.client.GetTournament(strings.Replace(strings.SplitAfter(c.slug, "/")[1], "/", "", 1))
 	if err != nil {
 		return err
@@ -206,36 +153,39 @@ func (c *commandHandler) SendProcess(s *discordgo.Session) error {
 					}
 					for _, set := range sets {
 						go func() {
-							// TODO: player1, err := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
+							// TODO:  player1
+							// player1, err := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
 							// if err != nil {
 							// 	log.Printf("sending message: Not finded member in discord (%v)", set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
 							// }
 
-							// TODO: player2, err := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
+							// TODO: player2
+							// player2, err := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
 							// if err != nil {
 							// 	log.Printf("sending message: Not finded member in discord (%v)", set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
 							// }
+
 							dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
 							fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
 
-							toPlayer1 := playerData{
+							toPlayer1 := PlayerData{
 								tournament:   tournament.Name,
 								setID:        set.Id,
-								discordID:    dv, // TODO: Set player1
+								user:         dv, // TODO: Set player1
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
-									discordID: fcuk, // TODO: Set player2
+									discordID: fcuk.discordID, // TODO: Set player2
 									nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
 									tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
 								},
 							}
-							toPlayer2 := playerData{
+							toPlayer2 := PlayerData{
 								tournament:   tournament.Name,
 								setID:        set.Id,
-								discordID:    dv, // TODO: Set player2
+								user:         dv, // TODO: Set player2
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
-									discordID: fcuk, // TODO: Set player1
+									discordID: fcuk.discordID, // TODO: Set player1
 									nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
 									tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
 								},

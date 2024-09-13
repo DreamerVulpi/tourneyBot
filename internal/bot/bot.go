@@ -31,25 +31,28 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 	})
 
 	cmdHandler := commandHandler{
-		guildID:   cfg.Discord.GuildID,
-		client:    client,
-		stop:      make(chan struct{}),
-		dataLobby: t,
-		RulesMatches: config.RulesMatches{
+		guildID:    cfg.Discord.GuildID,
+		client:     client,
+		stop:       make(chan struct{}),
+		tournament: t,
+		rulesMatches: config.RulesMatches{
 			Format:        t.Rules.Format,
 			Rounds:        t.Rules.Rounds,
 			Duration:      t.Rules.Duration,
 			Crossplatform: t.Rules.Crossplatform,
 			Stage:         t.Rules.Stage,
 		},
-		StreamLobby: config.StreamLobby{
+		streamLobby: config.StreamLobby{
 			Area:          t.Stream.Area,
 			Language:      t.Stream.Language,
 			Crossplatform: t.Stream.Crossplatform,
 			Conn:          t.Stream.Conn,
 			Passcode:      t.Stream.Passcode,
 		},
-		Bot: t.Bot,
+		logo:           "https://i.imgur.com/n9SG5IL.png",
+		logoTournament: t.Logo.Img,
+		appID:          cfg.Discord.AppID,
+		rolesIdList:    cfg.Roles,
 	}
 
 	commandHandlers["check"] = cmdHandler.check
@@ -70,6 +73,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 	})
 
 	log.Println("adding commands...")
+	commands := cmdHandler.commands()
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)

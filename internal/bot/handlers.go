@@ -15,15 +15,18 @@ import (
 )
 
 type commandHandler struct {
-	slug         string
-	guildID      string
-	stop         chan struct{}
-	m            *discordgo.MessageCreate
-	client       *startgg.Client
-	dataLobby    config.ConfigTournament
-	RulesMatches config.RulesMatches
-	StreamLobby  config.StreamLobby
-	Bot          config.Bot
+	slug           string
+	guildID        string
+	appID          string
+	logo           string
+	logoTournament string
+	stop           chan struct{}
+	m              *discordgo.MessageCreate
+	client         *startgg.Client
+	tournament     config.ConfigTournament
+	rulesMatches   config.RulesMatches
+	streamLobby    config.StreamLobby
+	rolesIdList    config.ConfigRolesIdDiscord
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -46,14 +49,14 @@ func (cmd *commandHandler) messageEmbed(title string, fields []*discordgo.Messag
 	return &discordgo.MessageEmbed{
 		Title: title,
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: cmd.Bot.Img,
+			IconURL: cmd.logo,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
 		Fields:    fields,
 		Timestamp: time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: cmd.Bot.LogoTournament,
+			URL: cmd.logoTournament,
 		},
 	}
 }
@@ -79,18 +82,18 @@ func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionC
 	}))
 
 	embed = append(embed, cmd.messageEmbed("Rules matches", []*discordgo.MessageEmbedField{
-		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format), Inline: true},
-		{Name: "**Stage**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Stage), Inline: true},
-		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Rounds)},
-		{Name: "**Seconds in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration), Inline: true},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform), Inline: true},
+		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.rulesMatches.Format), Inline: true},
+		{Name: "**Stage**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Stage), Inline: true},
+		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Rounds)},
+		{Name: "**Seconds in 1 round**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Duration), Inline: true},
+		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Crossplatform), Inline: true},
 	}))
 
 	embed = append(embed, cmd.messageEmbed("Stream lobby data", []*discordgo.MessageEmbedField{
-		{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Area), Inline: true},
-		{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Language), Inline: true},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
-		{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.StreamLobby.Passcode), Inline: true},
+		{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.streamLobby.Area), Inline: true},
+		{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.streamLobby.Language), Inline: true},
+		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.streamLobby.Crossplatform)},
+		{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.streamLobby.Passcode), Inline: true},
 	}))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
@@ -102,7 +105,7 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 		log.Println(err.Error())
 	}
 
-	go cmd.SendingMessages(s)
+	go cmd.Process(s)
 }
 func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	go func() {
@@ -150,18 +153,18 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 
 	embed := []*discordgo.MessageEmbed{}
 
-	cmd.RulesMatches.Format = format
-	cmd.RulesMatches.Stage = stage
-	cmd.RulesMatches.Rounds = rounds
-	cmd.RulesMatches.Duration = duration
-	cmd.RulesMatches.Crossplatform = args[4].BoolValue()
+	cmd.rulesMatches.Format = format
+	cmd.rulesMatches.Stage = stage
+	cmd.rulesMatches.Rounds = rounds
+	cmd.rulesMatches.Duration = duration
+	cmd.rulesMatches.Crossplatform = args[4].BoolValue()
 	embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
 		{Name: "**Rules matches**", Value: ""},
-		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.RulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.RulesMatches.Format), Inline: true},
-		{Name: "**Stage**", Value: cmd.RulesMatches.Stage, Inline: true},
-		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Rounds)},
-		{Name: "**Time in 1 round**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Duration) + " seconds"},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.RulesMatches.Crossplatform)},
+		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.rulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.rulesMatches.Format), Inline: true},
+		{Name: "**Stage**", Value: cmd.rulesMatches.Stage, Inline: true},
+		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Rounds)},
+		{Name: "**Time in 1 round**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Duration) + " seconds"},
+		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Crossplatform)},
 	}))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
@@ -171,7 +174,8 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 
 func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	args := i.ApplicationCommandData().Options
-
+	// TODO: Change locale using this V
+	// log.Println(i.Locale.String())
 	area := args[0].StringValue()
 	lang := args[1].StringValue()
 	conn := args[2].StringValue()
@@ -186,17 +190,17 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 			{Name: "**Stream lobby**", Value: "Your input data isn't correct"},
 		}))
 	} else {
-		cmd.StreamLobby.Area = area
-		cmd.StreamLobby.Language = lang
-		cmd.StreamLobby.Conn = conn
-		cmd.StreamLobby.Crossplatform = crossplatform
-		cmd.StreamLobby.Passcode = pc
+		cmd.streamLobby.Area = area
+		cmd.streamLobby.Language = lang
+		cmd.streamLobby.Conn = conn
+		cmd.streamLobby.Crossplatform = crossplatform
+		cmd.streamLobby.Passcode = pc
 		embed = append(embed, cmd.messageEmbed("Stream lobby", []*discordgo.MessageEmbedField{
-			{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.StreamLobby.Area)},
-			{Name: "**Language**", Value: cmd.RulesMatches.Stage},
-			{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Conn)},
-			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Crossplatform)},
-			{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.StreamLobby.Passcode)},
+			{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.streamLobby.Area)},
+			{Name: "**Language**", Value: cmd.rulesMatches.Stage},
+			{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.streamLobby.Conn)},
+			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.streamLobby.Crossplatform)},
+			{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.streamLobby.Passcode)},
 		}))
 	}
 
@@ -207,11 +211,11 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 
 func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	arg := i.ApplicationCommandData().Options[0].StringValue()
-	cmd.Bot.LogoTournament = arg
+	cmd.logoTournament = arg
 
 	embed := []*discordgo.MessageEmbed{}
 	embed = append(embed, cmd.messageEmbed("Logo tournament", []*discordgo.MessageEmbedField{
-		{Name: "**Url**", Value: fmt.Sprintf("%v", cmd.Bot.LogoTournament)},
+		{Name: "**Url**", Value: fmt.Sprintf("%v", cmd.logoTournament)},
 	}))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
