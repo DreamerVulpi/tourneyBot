@@ -15,6 +15,7 @@ import (
 type PlayerData struct {
 	tournament   string
 	setID        int64
+	streamName   string
 	streamSourse string
 	user         discordUser
 	opponent     opponentData
@@ -82,12 +83,11 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player PlayerData) {
 
 	link := fmt.Sprint("https://www.start.gg/", c.slug, "/set/", player.setID)
 
-	if len(player.user.locales) != 1 {
-		c.msgInviteDefault(s, player, channel, link)
+	// Check avaliable ru locale role in slice
+	if len(player.user.locales) != 0 {
+		c.msgInvite(s, player, channel, link, player.user.locales[0])
 	} else {
-		if player.user.locales[0] == c.rolesIdList.Ru {
-			c.msgInviteRu(s, player, channel, link)
-		}
+		c.msgInvite(s, player, channel, link, "default")
 	}
 }
 
@@ -170,6 +170,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 								tournament:   tournament.Name,
 								setID:        set.Id,
 								user:         dv, // TODO: Set player1
+								streamName:   set.Stream.StreamName,
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
 									discordID: fcuk.discordID, // TODO: Set player2
@@ -181,6 +182,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 								tournament:   tournament.Name,
 								setID:        set.Id,
 								user:         dv, // TODO: Set player2
+								streamName:   set.Stream.StreamName,
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
 									discordID: fcuk.discordID, // TODO: Set player1

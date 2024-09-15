@@ -1,6 +1,6 @@
 package locale
 
-var En = lang{
+var En = Lang{
 	InviteMessage: InviteMessage{
 		Title:                    "Tournament **%v**",
 		Description:              "An invitation to the tournament, including all the necessary information.\n\n*This message was automatically generated. There is no need to reply. If you have any questions or need assistance, please contact one of the organizers' assistants.*",
@@ -42,19 +42,23 @@ var En = lang{
 		CrossplatformStatusFalse: "Disable",
 		Passcode:                 "**Passcode**",
 		PasscodeTemplate:         "```%v```",
+		StreamLink:               "**Link to stream**",
 	},
 	ViewDataMessage: ViewDataMessage{
 		Title:               "Check data",
 		Description:         "A slug is made of two parts, the tournament name and the event name. The format is this:\n*tournament/<tournament_name>/event/<event_name>*",
 		MessageRulesHeader:  "Rules matches",
 		MessageStreamHeader: "Stream lobby data",
+		LogoTournament:      "Logo tournament",
 	},
 	ErrorMessage: ErrorMessage{
 		Input:   "Your input data isn't correct",
 		Respond: "Сan't respond on message",
+		NoData:  "No data",
 	},
 	ResponseMessage: ResponseMessage{
-		Stopng: "Stopping...",
-		Stopd:  "Stopped.",
+		Starting: "Starting sending...",
+		Stopping: "Stopping...",
+		Stopped:  "Stopped.",
 	},
 }

@@ -39,6 +39,7 @@ type Nodes struct {
 }
 
 type Streamer struct {
+	StreamName   string `json:"streamName"`
 	StreamSource string `json:"streamSource"`
 }
 

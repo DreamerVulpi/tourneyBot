@@ -77,11 +77,7 @@ func (cmd *commandHandler) responseEmbed(s *discordgo.Session, i *discordgo.Inte
 func (cmd *commandHandler) viewData(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embed := []*discordgo.MessageEmbed{}
 
-	if i.Locale.String() == "Russian" {
-		embed = append(embed, cmd.msgViewDataRu())
-	} else {
-		embed = append(embed, cmd.msgViewDataDefault())
-	}
+	embed = append(embed, cmd.msgViewData(i.Locale.String()))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
 		log.Println(errors.New("check: can't respond on message"))
@@ -89,16 +85,15 @@ func (cmd *commandHandler) viewData(s *discordgo.Session, i *discordgo.Interacti
 }
 
 func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	local := cmd.msgResponse(i.Locale.String())
+
 	if cmd.guildID != "" && cmd.slug != "" {
-		if err := response(s, i, "Start sending..."); err != nil {
+		if err := response(s, i, local.responseMsg.Starting); err != nil {
 			log.Println(err.Error())
 		}
-
 		go cmd.Process(s)
 	} else {
 		embed := []*discordgo.MessageEmbed{}
-
-		local := cmd.msgResponse(i)
 
 		embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "", Value: local.errorMsg.Input},
@@ -111,16 +106,16 @@ func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.Inte
 }
 
 func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	local := cmd.msgResponse(i)
+	local := cmd.msgResponse(i.Locale.String())
 
 	go func() {
-		response(s, i, local.responseMsg.Stopng)
+		response(s, i, local.responseMsg.Stopping)
 	}()
 
 	// Send signal to stop process
 	cmd.stop <- struct{}{}
 
-	s.ChannelMessageSend(i.ChannelID, local.responseMsg.Stopd)
+	s.ChannelMessageSend(i.ChannelID, local.responseMsg.Stopped)
 }
 
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -132,7 +127,7 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 	arg := strings.SplitN(u.Path, "/", -1)
 	embed := []*discordgo.MessageEmbed{}
 
-	local := cmd.msgResponse(i)
+	local := cmd.msgResponse(i.Locale.String())
 
 	if len(arg) != 0 {
 		if arg[1] == "tournament" && arg[3] == "event" {
@@ -168,7 +163,7 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 	cmd.rulesMatches.Duration = duration
 	cmd.rulesMatches.Crossplatform = args[4].BoolValue()
 
-	local := cmd.msgResponse(i)
+	local := cmd.msgResponse(i.Locale.String())
 
 	embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 		{Name: local.vdMsg.MessageRulesHeader, Value: ""},
@@ -195,7 +190,7 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 
 	embed := []*discordgo.MessageEmbed{}
 
-	local := cmd.msgResponse(i)
+	local := cmd.msgResponse(i.Locale.String())
 
 	if len(pc) != 4 {
 		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
@@ -221,16 +216,15 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 	}
 }
 
-// TODO: Locale
 func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	arg := i.ApplicationCommandData().Options[0].StringValue()
 	cmd.logoTournament = arg
 
 	embed := []*discordgo.MessageEmbed{}
 
-	local := cmd.msgResponse(i)
+	local := cmd.msgResponse(i.Locale.String())
 
-	embed = append(embed, cmd.messageEmbed("Logo tournament", []*discordgo.MessageEmbedField{
+	embed = append(embed, cmd.messageEmbed(local.vdMsg.LogoTournament, []*discordgo.MessageEmbedField{
 		{Name: "**Url**", Value: fmt.Sprintf("%v", cmd.logoTournament)},
 	}))
 

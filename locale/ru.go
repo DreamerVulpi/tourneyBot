@@ -1,6 +1,6 @@
 package locale
 
-var Ru = lang{
+var Ru = Lang{
 	InviteMessage: InviteMessage{
 		Title:                    "Турнир **%v**",
 		Description:              "Приглашение на турнир со всей необходимой информацией.\n\n*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*",
@@ -42,19 +42,23 @@ var Ru = lang{
 		CrossplatformStatusFalse: "Выключена",
 		Passcode:                 "**Пароль**",
 		PasscodeTemplate:         "```%v```",
+		StreamLink:               "**Ссылка на трансляцию**",
 	},
 	ViewDataMessage: ViewDataMessage{
 		Title:               "Проверка данных",
 		Description:         "Slug состоит из двух частей: названии турнира и ивента. Формат:\n*tournament/<tournament_name>/event/<event_name>*",
 		MessageRulesHeader:  "Правила матчей",
 		MessageStreamHeader: "Данные стрим-лобби",
+		LogoTournament:      "Логотип турнира",
 	},
 	ErrorMessage: ErrorMessage{
 		Input:   "Ваши введенные данные не верны",
 		Respond: "Не могу ответить на сообщение",
+		NoData:  "Нет данных",
 	},
 	ResponseMessage: ResponseMessage{
-		Stopng: "Останавливаю...",
-		Stopd:  "Остановлено.",
+		Starting: "Начинаю рассылать...",
+		Stopping: "Останавливаю...",
+		Stopped:  "Остановлено.",
 	},
 }

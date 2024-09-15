@@ -71,6 +71,7 @@ const (
 					id
 					state
 					stream {
+						streamName
 						streamSource
 					}
 					slots{

@@ -42,28 +42,30 @@ type StreamLobbyMessage struct {
 	CrossplatformStatusFalse string
 	Passcode                 string
 	PasscodeTemplate         string
+	StreamLink               string
 }
-
-// TODO: Add more locales for admin command
 
 type ViewDataMessage struct {
 	Title               string
 	Description         string
 	MessageRulesHeader  string
 	MessageStreamHeader string
+	LogoTournament      string
 }
 
 type ErrorMessage struct {
 	Input   string
 	Respond string
+	NoData  string
 }
 
 type ResponseMessage struct {
-	Stopng string
-	Stopd  string
+	Starting string
+	Stopping string
+	Stopped  string
 }
 
-type lang struct {
+type Lang struct {
 	InviteMessage      InviteMessage
 	StreamLobbyMessage StreamLobbyMessage
 	ViewDataMessage    ViewDataMessage
