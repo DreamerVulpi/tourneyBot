@@ -44,7 +44,29 @@ type StreamLobbyMessage struct {
 	PasscodeTemplate         string
 }
 
+// TODO: Add more locales for admin command
+
+type ViewDataMessage struct {
+	Title               string
+	Description         string
+	MessageRulesHeader  string
+	MessageStreamHeader string
+}
+
+type ErrorMessage struct {
+	Input   string
+	Respond string
+}
+
+type ResponseMessage struct {
+	Stopng string
+	Stopd  string
+}
+
 type lang struct {
 	InviteMessage      InviteMessage
 	StreamLobbyMessage StreamLobbyMessage
+	ViewDataMessage    ViewDataMessage
+	ErrorMessage       ErrorMessage
+	ResponseMessage    ResponseMessage
 }

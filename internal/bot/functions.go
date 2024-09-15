@@ -83,10 +83,10 @@ func (c *commandHandler) sendMessage(s *discordgo.Session, player PlayerData) {
 	link := fmt.Sprint("https://www.start.gg/", c.slug, "/set/", player.setID)
 
 	if len(player.user.locales) != 1 {
-		c.msgDefault(s, player, channel, link)
+		c.msgInviteDefault(s, player, channel, link)
 	} else {
 		if player.user.locales[0] == c.rolesIdList.Ru {
-			c.msgRu(s, player, channel, link)
+			c.msgInviteRu(s, player, channel, link)
 		}
 	}
 }
@@ -133,13 +133,11 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 				if err != nil {
 					return err
 				}
-
-				var pages int
-
 				if total == 0 {
 					continue
 				}
 
+				var pages int
 				if total <= 60 {
 					pages = 1
 				} else {

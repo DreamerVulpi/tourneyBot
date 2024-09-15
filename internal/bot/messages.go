@@ -8,7 +8,22 @@ import (
 	"github.com/dreamervulpi/tourneybot/locale"
 )
 
-func (c *commandHandler) msgRu(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string) {
+// TODO: REFACTOR CODE
+
+type responseLocale struct {
+	errorMsg       locale.ErrorMessage
+	vdMsg          locale.ViewDataMessage
+	invMsg         locale.InviteMessage
+	streamMsg      locale.StreamLobbyMessage
+	responseMsg    locale.ResponseMessage
+	crossplayRules string
+	crossplayLobby string
+	area           string
+	lang           string
+	conn           string
+}
+
+func (c *commandHandler) msgInviteRu(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string) {
 	if len(player.streamSourse) == 0 {
 		var crossplay string
 		if !c.tournament.Rules.Crossplatform {
@@ -103,7 +118,7 @@ func (c *commandHandler) msgRu(s *discordgo.Session, player PlayerData, channel 
 	}
 }
 
-func (c *commandHandler) msgDefault(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string) {
+func (c *commandHandler) msgInviteDefault(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string) {
 	if len(player.streamSourse) == 0 {
 		var crossplay string
 		if !c.tournament.Rules.Crossplatform {
@@ -196,4 +211,181 @@ func (c *commandHandler) msgDefault(s *discordgo.Session, player PlayerData, cha
 			}
 		}
 	}
+}
+
+func (c *commandHandler) msgViewDataDefault() *discordgo.MessageEmbed {
+	var crossplay string
+	if !c.tournament.Rules.Crossplatform {
+		crossplay = locale.En.InviteMessage.CrossplatformStatusFalse
+	} else {
+		crossplay = locale.En.InviteMessage.CrossplatformStatusTrue
+	}
+	var stage string
+	if c.tournament.Rules.Stage == "any" {
+		stage = locale.En.InviteMessage.AnyStage
+	} else {
+		stage = c.tournament.Rules.Stage
+	}
+	var lang string
+	if c.tournament.Stream.Language == "any" {
+		lang = locale.En.StreamLobbyMessage.AnyLanguage
+	} else {
+		lang = locale.En.StreamLobbyMessage.SameLanguage
+	}
+	var area string
+	if c.tournament.Stream.Area == "any" {
+		area = locale.En.StreamLobbyMessage.AnyArea
+	} else {
+		area = locale.En.StreamLobbyMessage.CloseArea
+	}
+	var conn string
+	if c.tournament.Stream.Conn == "any" {
+		conn = locale.En.StreamLobbyMessage.AnyConnection
+	} else {
+		conn = c.tournament.Stream.Conn
+	}
+	fields := []*discordgo.MessageEmbedField{
+		{Name: locale.En.ViewDataMessage.Title},
+		{Name: "**Slug**", Value: fmt.Sprintln(locale.En.ViewDataMessage.Description), Inline: true},
+		{Value: fmt.Sprintf("```%v```", c.slug)},
+
+		{Name: locale.En.ViewDataMessage.MessageRulesHeader},
+		{Name: locale.En.InviteMessage.Format, Value: fmt.Sprintf(locale.En.InviteMessage.FT, c.tournament.Rules.Format) + fmt.Sprintf(locale.En.InviteMessage.FormatDescription, c.tournament.Rules.Format), Inline: true},
+		{Name: locale.En.InviteMessage.Stage, Value: stage, Inline: true},
+		{Name: locale.En.InviteMessage.Rounds, Value: fmt.Sprintf("%v", c.tournament.Rules.Rounds), Inline: true},
+		{Name: locale.En.InviteMessage.Duration, Value: fmt.Sprintf(locale.En.InviteMessage.DurationCount, c.tournament.Rules.Duration), Inline: true},
+		{Name: locale.En.InviteMessage.Crossplatform, Value: crossplay, Inline: true},
+
+		{Name: locale.En.ViewDataMessage.MessageStreamHeader},
+		{Name: locale.En.StreamLobbyMessage.Area, Value: area, Inline: true},
+		{Name: locale.En.StreamLobbyMessage.Language, Value: lang, Inline: true},
+		{Name: locale.En.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},
+		{Name: locale.En.StreamLobbyMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: locale.En.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(locale.En.StreamLobbyMessage.PasscodeTemplate, c.tournament.Stream.Passcode), Inline: true},
+	}
+	message := c.templateMessage(fields)
+	return message
+}
+
+func (c *commandHandler) msgViewDataRu() *discordgo.MessageEmbed {
+	var crossplay string
+	if !c.tournament.Rules.Crossplatform {
+		crossplay = locale.Ru.InviteMessage.CrossplatformStatusFalse
+	} else {
+		crossplay = locale.Ru.InviteMessage.CrossplatformStatusTrue
+	}
+	var stage string
+	if c.tournament.Rules.Stage == "any" {
+		stage = locale.Ru.InviteMessage.AnyStage
+	} else {
+		stage = c.tournament.Rules.Stage
+	}
+	var lang string
+	if c.tournament.Stream.Language == "any" {
+		lang = locale.Ru.StreamLobbyMessage.AnyLanguage
+	} else {
+		lang = locale.Ru.StreamLobbyMessage.SameLanguage
+	}
+	var area string
+	if c.tournament.Stream.Area == "any" {
+		area = locale.Ru.StreamLobbyMessage.AnyArea
+	} else {
+		area = locale.Ru.StreamLobbyMessage.CloseArea
+	}
+	var conn string
+	if c.tournament.Stream.Conn == "any" {
+		conn = locale.Ru.StreamLobbyMessage.AnyConnection
+	} else {
+		conn = c.tournament.Stream.Conn
+	}
+	fields := []*discordgo.MessageEmbedField{
+		{Name: locale.Ru.ViewDataMessage.Title},
+		{Name: "**Slug**", Value: fmt.Sprintln(locale.Ru.ViewDataMessage.Description), Inline: true},
+		{Value: fmt.Sprintf("```%v```", c.slug)},
+
+		{Name: locale.Ru.ViewDataMessage.MessageRulesHeader},
+		{Name: locale.Ru.InviteMessage.Format, Value: fmt.Sprintf(locale.Ru.InviteMessage.FT, c.tournament.Rules.Format) + fmt.Sprintf(locale.Ru.InviteMessage.FormatDescription, c.tournament.Rules.Format), Inline: true},
+		{Name: locale.Ru.InviteMessage.Stage, Value: stage, Inline: true},
+		{Name: locale.Ru.InviteMessage.Rounds, Value: fmt.Sprintf("%v", c.tournament.Rules.Rounds), Inline: true},
+		{Name: locale.Ru.InviteMessage.Duration, Value: fmt.Sprintf(locale.Ru.InviteMessage.DurationCount, c.tournament.Rules.Duration), Inline: true},
+		{Name: locale.Ru.InviteMessage.Crossplatform, Value: crossplay, Inline: true},
+
+		{Name: locale.Ru.ViewDataMessage.MessageStreamHeader},
+		{Name: locale.Ru.StreamLobbyMessage.Area, Value: area, Inline: true},
+		{Name: locale.Ru.StreamLobbyMessage.Language, Value: lang, Inline: true},
+		{Name: locale.Ru.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},
+		{Name: locale.Ru.StreamLobbyMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: locale.Ru.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(locale.Ru.StreamLobbyMessage.PasscodeTemplate, c.tournament.Stream.Passcode), Inline: true},
+	}
+	message := c.templateMessage(fields)
+	return message
+}
+
+func (c *commandHandler) msgResponse(i *discordgo.InteractionCreate) responseLocale {
+	var rslt responseLocale
+
+	if i.Locale.String() == "Russian" {
+		rslt.errorMsg = locale.Ru.ErrorMessage
+		rslt.vdMsg = locale.Ru.ViewDataMessage
+		rslt.invMsg = locale.Ru.InviteMessage
+		rslt.responseMsg = locale.Ru.ResponseMessage
+		if c.tournament.Rules.Crossplatform {
+			rslt.crossplayRules = locale.Ru.InviteMessage.CrossplatformStatusTrue
+		} else {
+			rslt.crossplayRules = locale.Ru.InviteMessage.CrossplatformStatusFalse
+		}
+		if c.tournament.Stream.Crossplatform {
+			rslt.crossplayLobby = locale.Ru.StreamLobbyMessage.CrossplatformStatusTrue
+		} else {
+			rslt.crossplayLobby = locale.Ru.StreamLobbyMessage.CrossplatformStatusFalse
+		}
+		if c.tournament.Stream.Area == "any" {
+			rslt.area = locale.Ru.StreamLobbyMessage.AnyArea
+		} else {
+			rslt.area = locale.Ru.StreamLobbyMessage.CloseArea
+		}
+		if c.tournament.Stream.Conn == "any" {
+			rslt.area = locale.Ru.StreamLobbyMessage.AnyConnection
+		} else {
+			rslt.area = c.tournament.Stream.Conn
+		}
+		if c.tournament.Stream.Language == "any" {
+			rslt.lang = locale.Ru.StreamLobbyMessage.AnyLanguage
+		} else {
+			rslt.lang = locale.Ru.StreamLobbyMessage.SameLanguage
+		}
+	} else {
+		rslt.errorMsg = locale.En.ErrorMessage
+		rslt.vdMsg = locale.En.ViewDataMessage
+		rslt.invMsg = locale.En.InviteMessage
+
+		if c.tournament.Rules.Crossplatform {
+			rslt.crossplayRules = locale.En.InviteMessage.CrossplatformStatusTrue
+		} else {
+			rslt.crossplayRules = locale.En.InviteMessage.CrossplatformStatusFalse
+		}
+
+		if c.tournament.Stream.Crossplatform {
+			rslt.crossplayLobby = locale.En.StreamLobbyMessage.CrossplatformStatusTrue
+		} else {
+			rslt.crossplayLobby = locale.En.StreamLobbyMessage.CrossplatformStatusFalse
+		}
+
+		if c.tournament.Stream.Area == "any" {
+			rslt.area = locale.En.StreamLobbyMessage.AnyArea
+		} else {
+			rslt.area = locale.En.StreamLobbyMessage.CloseArea
+		}
+		if c.tournament.Stream.Conn == "any" {
+			rslt.area = locale.En.StreamLobbyMessage.AnyConnection
+		} else {
+			rslt.area = c.tournament.Stream.Conn
+		}
+		if c.tournament.Stream.Language == "any" {
+			rslt.lang = locale.En.StreamLobbyMessage.AnyLanguage
+		} else {
+			rslt.lang = locale.En.StreamLobbyMessage.SameLanguage
+		}
+	}
+	return rslt
 }

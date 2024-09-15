@@ -43,4 +43,18 @@ var Ru = lang{
 		Passcode:                 "**Пароль**",
 		PasscodeTemplate:         "```%v```",
 	},
+	ViewDataMessage: ViewDataMessage{
+		Title:               "Проверка данных",
+		Description:         "Slug состоит из двух частей: названии турнира и ивента. Формат:\n*tournament/<tournament_name>/event/<event_name>*",
+		MessageRulesHeader:  "Правила матчей",
+		MessageStreamHeader: "Данные стрим-лобби",
+	},
+	ErrorMessage: ErrorMessage{
+		Input:   "Ваши введенные данные не верны",
+		Respond: "Не могу ответить на сообщение",
+	},
+	ResponseMessage: ResponseMessage{
+		Stopng: "Останавливаю...",
+		Stopd:  "Остановлено.",
+	},
 }

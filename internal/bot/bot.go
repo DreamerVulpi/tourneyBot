@@ -55,7 +55,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 		rolesIdList:    cfg.Roles,
 	}
 
-	commandHandlers["check"] = cmdHandler.check
+	commandHandlers["check"] = cmdHandler.viewData
 	commandHandlers["start-sending"] = cmdHandler.start_sending
 	commandHandlers["stop-sending"] = cmdHandler.stop_sending
 	commandHandlers["set-event"] = cmdHandler.setEvent

@@ -43,4 +43,18 @@ var En = lang{
 		Passcode:                 "**Passcode**",
 		PasscodeTemplate:         "```%v```",
 	},
+	ViewDataMessage: ViewDataMessage{
+		Title:               "Check data",
+		Description:         "A slug is made of two parts, the tournament name and the event name. The format is this:\n*tournament/<tournament_name>/event/<event_name>*",
+		MessageRulesHeader:  "Rules matches",
+		MessageStreamHeader: "Stream lobby data",
+	},
+	ErrorMessage: ErrorMessage{
+		Input:   "Your input data isn't correct",
+		Respond: "Сan't respond on message",
+	},
+	ResponseMessage: ResponseMessage{
+		Stopng: "Stopping...",
+		Stopd:  "Stopped.",
+	},
 }

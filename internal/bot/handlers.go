@@ -74,48 +74,53 @@ func (cmd *commandHandler) responseEmbed(s *discordgo.Session, i *discordgo.Inte
 	return err
 }
 
-func (cmd *commandHandler) check(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (cmd *commandHandler) viewData(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embed := []*discordgo.MessageEmbed{}
-	embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
-		{Name: "**Slug**", Value: fmt.Sprintln("A slug is made of two parts, the tournament name and the event name. The format is this:\n*tournament/<tournament_name>/event/<event_name>*"), Inline: true},
-		{Value: fmt.Sprintf("```%v```", cmd.slug)},
-	}))
 
-	embed = append(embed, cmd.messageEmbed("Rules matches", []*discordgo.MessageEmbedField{
-		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.rulesMatches.Format), Inline: true},
-		{Name: "**Stage**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Stage), Inline: true},
-		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Rounds)},
-		{Name: "**Seconds in 1 round**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Duration), Inline: true},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Crossplatform), Inline: true},
-	}))
-
-	embed = append(embed, cmd.messageEmbed("Stream lobby data", []*discordgo.MessageEmbedField{
-		{Name: "**Area**", Value: fmt.Sprintf("%v", cmd.streamLobby.Area), Inline: true},
-		{Name: "**Language**", Value: fmt.Sprintf("%v", cmd.streamLobby.Language), Inline: true},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.streamLobby.Crossplatform)},
-		{Name: "**Passcode**", Value: fmt.Sprintf("```%v```", cmd.streamLobby.Passcode), Inline: true},
-	}))
+	if i.Locale.String() == "Russian" {
+		embed = append(embed, cmd.msgViewDataRu())
+	} else {
+		embed = append(embed, cmd.msgViewDataDefault())
+	}
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
 		log.Println(errors.New("check: can't respond on message"))
 	}
 }
-func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if err := response(s, i, "Start sending..."); err != nil {
-		log.Println(err.Error())
-	}
 
-	go cmd.Process(s)
+func (cmd *commandHandler) start_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if cmd.guildID != "" && cmd.slug != "" {
+		if err := response(s, i, "Start sending..."); err != nil {
+			log.Println(err.Error())
+		}
+
+		go cmd.Process(s)
+	} else {
+		embed := []*discordgo.MessageEmbed{}
+
+		local := cmd.msgResponse(i)
+
+		embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+			{Name: "", Value: local.errorMsg.Input},
+		}))
+
+		if err := cmd.responseEmbed(s, i, embed); err != nil {
+			log.Println(fmt.Errorf("editLogoTournament: %v", local.errorMsg.Respond))
+		}
+	}
 }
+
 func (cmd *commandHandler) stop_sending(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	local := cmd.msgResponse(i)
+
 	go func() {
-		response(s, i, "stopping...")
+		response(s, i, local.responseMsg.Stopng)
 	}()
 
 	// Send signal to stop process
 	cmd.stop <- struct{}{}
 
-	s.ChannelMessageSend(i.ChannelID, "Stopped!")
+	s.ChannelMessageSend(i.ChannelID, local.responseMsg.Stopd)
 }
 
 func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -124,22 +129,26 @@ func (cmd *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interacti
 		log.Println(err)
 	}
 
-	c := strings.Replace(u.Path, "/", "", 1)
-	arr := strings.SplitN(c, "/", 5)
-
+	arg := strings.SplitN(u.Path, "/", -1)
 	embed := []*discordgo.MessageEmbed{}
-	if arr[0] != "tournament" || arr[2] != "event" {
-		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
-			{Name: "**Slug**", Value: "Your input data isn't correct"},
-		}))
+
+	local := cmd.msgResponse(i)
+
+	if len(arg) != 0 {
+		if arg[1] == "tournament" && arg[3] == "event" {
+			cmd.slug = arg[1] + "/" + arg[2] + "/" + arg[3] + "/" + arg[4]
+			embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+				{Name: "**Slug**", Value: cmd.slug},
+			}))
+		}
 	} else {
-		cmd.slug = arr[0] + "/" + arr[1] + "/" + arr[2] + "/" + arr[3]
-		embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
-			{Name: "**Slug**", Value: cmd.slug},
+		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: local.errorMsg.Input},
 		}))
 	}
+
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
-		log.Println(errors.New("setEvent: can't respond on message"))
+		log.Println(fmt.Errorf("setEvent: %v", local.errorMsg.Respond))
 	}
 }
 
@@ -158,24 +167,25 @@ func (cmd *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.In
 	cmd.rulesMatches.Rounds = rounds
 	cmd.rulesMatches.Duration = duration
 	cmd.rulesMatches.Crossplatform = args[4].BoolValue()
-	embed = append(embed, cmd.messageEmbed("Check data", []*discordgo.MessageEmbedField{
-		{Name: "**Rules matches**", Value: ""},
-		{Name: "**Format**", Value: fmt.Sprintf("FT%v", cmd.rulesMatches.Format) + fmt.Sprintf(" (First to %v win in set)", cmd.rulesMatches.Format), Inline: true},
-		{Name: "**Stage**", Value: cmd.rulesMatches.Stage, Inline: true},
-		{Name: "**Rounds in 1 match**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Rounds)},
-		{Name: "**Time in 1 round**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Duration) + " seconds"},
-		{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.rulesMatches.Crossplatform)},
+
+	local := cmd.msgResponse(i)
+
+	embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+		{Name: local.vdMsg.MessageRulesHeader, Value: ""},
+		{Name: local.invMsg.Format, Value: fmt.Sprintf(local.invMsg.FT, cmd.tournament.Rules.Format) + fmt.Sprintf(local.invMsg.FormatDescription, cmd.tournament.Rules.Format), Inline: true},
+		{Name: local.invMsg.Stage, Value: stage, Inline: true},
+		{Name: local.invMsg.Rounds, Value: fmt.Sprintf("%v", cmd.tournament.Rules.Rounds), Inline: true},
+		{Name: local.invMsg.Duration, Value: fmt.Sprintf(local.invMsg.DurationCount, cmd.tournament.Rules.Duration), Inline: true},
+		{Name: local.invMsg.Crossplatform, Value: local.crossplayRules, Inline: true},
 	}))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
-		log.Println(errors.New("editRuleMatches: can't respond on message"))
+		log.Println(fmt.Errorf("editRuleMatches: %v", local.errorMsg.Respond))
 	}
 }
 
 func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	args := i.ApplicationCommandData().Options
-	// TODO: Change locale using this V
-	// log.Println(i.Locale.String())
 	area := args[0].StringValue()
 	lang := args[1].StringValue()
 	conn := args[2].StringValue()
@@ -185,9 +195,11 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 
 	embed := []*discordgo.MessageEmbed{}
 
+	local := cmd.msgResponse(i)
+
 	if len(pc) != 4 {
 		embed = append(embed, cmd.messageEmbed("Error", []*discordgo.MessageEmbedField{
-			{Name: "**Stream lobby**", Value: "Your input data isn't correct"},
+			{Name: local.vdMsg.MessageStreamHeader, Value: local.errorMsg.Input},
 		}))
 	} else {
 		cmd.streamLobby.Area = area
@@ -195,12 +207,12 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 		cmd.streamLobby.Conn = conn
 		cmd.streamLobby.Crossplatform = crossplatform
 		cmd.streamLobby.Passcode = pc
-		embed = append(embed, cmd.messageEmbed("Stream lobby", []*discordgo.MessageEmbedField{
-			{Name: "**Area**", Value: fmt.Sprintf("FT%v", cmd.streamLobby.Area)},
-			{Name: "**Language**", Value: cmd.rulesMatches.Stage},
-			{Name: "**Connection quality preference**", Value: fmt.Sprintf("%v", cmd.streamLobby.Conn)},
-			{Name: "**Crossplatform**", Value: fmt.Sprintf("%v", cmd.streamLobby.Crossplatform)},
-			{Name: "**Passcode**", Value: fmt.Sprintf("%v", cmd.streamLobby.Passcode)},
+		embed = append(embed, cmd.messageEmbed(local.vdMsg.MessageStreamHeader, []*discordgo.MessageEmbedField{
+			{Name: local.streamMsg.Area, Value: fmt.Sprintf("%v", local.area)},
+			{Name: local.streamMsg.Language, Value: local.lang},
+			{Name: local.streamMsg.TypeConnection, Value: fmt.Sprintf("%v", local.conn)},
+			{Name: local.streamMsg.Crossplatform, Value: fmt.Sprintf("%v", local.crossplayRules)},
+			{Name: local.streamMsg.Passcode, Value: fmt.Sprintf(local.streamMsg.PasscodeTemplate, cmd.streamLobby.Passcode)},
 		}))
 	}
 
@@ -209,18 +221,22 @@ func (cmd *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.In
 	}
 }
 
+// TODO: Locale
 func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	arg := i.ApplicationCommandData().Options[0].StringValue()
 	cmd.logoTournament = arg
 
 	embed := []*discordgo.MessageEmbed{}
+
+	local := cmd.msgResponse(i)
+
 	embed = append(embed, cmd.messageEmbed("Logo tournament", []*discordgo.MessageEmbedField{
 		{Name: "**Url**", Value: fmt.Sprintf("%v", cmd.logoTournament)},
 	}))
 
 	if err := cmd.responseEmbed(s, i, embed); err != nil {
-		log.Println(errors.New("editLogoTournament: can't respond on message"))
+		log.Println(fmt.Errorf("editLogoTournament: %v", local.errorMsg.Respond))
 	}
 }
 
-// TODO: Add new command: Help
+// TODO: Add new command: help?
