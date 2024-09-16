@@ -2,23 +2,8 @@ package startgg
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
-
-type RawPhaseGroupStateData struct {
-	Data   DataPhaseGroupState `json:"data"`
-	Errors []Errors            `json:"errors"`
-}
-
-type DataPhaseGroupState struct {
-	PhaseGroup PGState `json:"phaseGroup"`
-}
-
-type PGState struct {
-	Id    int64 `json:"id"`
-	State int   `json:"state"`
-}
 
 type RawPhaseGroupData struct {
 	Data   DataPhaseGroup `json:"data"`
@@ -47,9 +32,15 @@ type PageInfo struct {
 
 // Information about Set
 type Nodes struct {
-	Id    int64   `json:"id"`
-	State int     `json:"state"`
-	Slots []Slots `json:"slots"`
+	Id     int64    `json:"id"`
+	State  State    `json:"state"`
+	Stream Streamer `json:"stream"`
+	Slots  []Slots  `json:"slots"`
+}
+
+type Streamer struct {
+	StreamName   string `json:"streamName"`
+	StreamSource string `json:"streamSource"`
 }
 
 // Slots in set
@@ -85,53 +76,21 @@ type Authorizations struct {
 	Discord string `json:"externalUsername"`
 }
 
-func GetPhaseGroupState(phaseGroupID int64) (*RawPhaseGroupStateData, error) {
-	if !token() {
-		return &RawPhaseGroupStateData{}, errors.New("Token Verification - Authentication Token Not Set")
-	}
-
-	var variables = map[string]any{
-		"phaseGroupId": phaseGroupID,
-	}
-
-	query, err := json.Marshal(prepareQuery(getPhaseGroupState, variables))
-	if err != nil {
-		return &RawPhaseGroupStateData{}, fmt.Errorf("JSON Marshal - %w", err)
-	}
-
-	data, err := runQuery(query)
-	if err != nil {
-		return &RawPhaseGroupStateData{}, err
-	}
-
-	results := &RawPhaseGroupStateData{}
-	err = json.Unmarshal(data, results)
-	if err != nil {
-		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
-	}
-
-	return results, nil
-}
-
-func GetPhaseGroupSets(phaseGroupID int64, page int, perPage int) (*RawPhaseGroupData, error) {
-	if !token() {
-		return &RawPhaseGroupData{}, errors.New("token verification - authentication token not set")
-	}
-
+func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 		"page":         page,
 		"perPage":      perPage,
 	}
 
-	query, err := json.Marshal(prepareQuery(getPhaseGroupSets, variables))
+	query, err := json.Marshal(PrepareQuery(getPhaseGroupSets, variables))
 	if err != nil {
-		return &RawPhaseGroupData{}, fmt.Errorf("JSON Marshal - %w", err)
+		return []Nodes{}, fmt.Errorf("JSON Marshal - %w", err)
 	}
 
-	data, err := runQuery(query)
+	data, err := c.RunQuery(query)
 	if err != nil {
-		return &RawPhaseGroupData{}, err
+		return []Nodes{}, err
 	}
 
 	results := &RawPhaseGroupData{}
@@ -140,5 +99,5 @@ func GetPhaseGroupSets(phaseGroupID int64, page int, perPage int) (*RawPhaseGrou
 		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
 	}
 
-	return results, nil
+	return results.Data.PhaseGroup.Sets.Nodes, nil
 }
