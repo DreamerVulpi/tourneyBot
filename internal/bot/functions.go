@@ -116,8 +116,8 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 		return err
 	}
 
-	// TODO: Change to InProcess
-	if tournament.State == startgg.IsDone {
+	// Test: Change to IsDone
+	if tournament.State == startgg.InProcess {
 		phaseGroups, err := c.client.GetListGroups(c.slug)
 		if err != nil {
 			return err
@@ -127,8 +127,8 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 			if err != nil {
 				return err
 			}
-			// TODO: Change to InProcess
-			if state == startgg.IsDone {
+			// Test: Change to IsDone
+			if state == startgg.InProcess {
 				total, err := c.client.GetPagesCount(phaseGroup.Id)
 				if err != nil {
 					return err
@@ -154,29 +154,27 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 							continue
 						}
 						go func() {
-							// TODO:  player1
-							// player1, err := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
-							// if err != nil {
-							// 	log.Printf("sending message: Not finded member in discord (%v)", set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
-							// }
+							player1, err := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
+							if err != nil {
+								log.Printf("sending message: Not finded member in discord (%v)", set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
+							}
 
-							// TODO: player2
-							// player2, err := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
-							// if err != nil {
-							// 	log.Printf("sending message: Not finded member in discord (%v)", set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
-							// }
+							player2, err := c.searchContactDiscord(s, set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
+							if err != nil {
+								log.Printf("sending message: Not finded member in discord (%v)", set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord)
+							}
 
-							dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
-							fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
+							// dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
+							// fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
 
 							toPlayer1 := PlayerData{
 								tournament:   tournament.Name,
 								setID:        set.Id,
-								user:         dv, // TODO: Set player1
+								user:         player1, // Set player1
 								streamName:   set.Stream.StreamName,
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
-									discordID: fcuk.discordID, // TODO: Set player2
+									discordID: player2.discordID, // Set player2
 									nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
 									tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
 								},
@@ -184,11 +182,11 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 							toPlayer2 := PlayerData{
 								tournament:   tournament.Name,
 								setID:        set.Id,
-								user:         dv, // TODO: Set player2
+								user:         player2, // Set player2
 								streamName:   set.Stream.StreamName,
 								streamSourse: set.Stream.StreamSource,
 								opponent: opponentData{
-									discordID: fcuk.discordID, // TODO: Set player1
+									discordID: player1.discordID, // Set player1
 									nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
 									tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
 								},
