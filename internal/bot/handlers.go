@@ -232,5 +232,3 @@ func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo
 		log.Println(fmt.Errorf("editLogoTournament: %v", local.errorMsg.Respond))
 	}
 }
-
-// TODO: Add new command: help?

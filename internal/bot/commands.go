@@ -6,25 +6,26 @@ import (
 )
 
 func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
-	// TODO: Change access commands to only administrator server or specic role
+	dmPermission := false
 	return []*discordgo.ApplicationCommand{
 		{
 			Name:        "check",
-			Description: "Check variables startgg, discord and bot.",
+			Description: "Check startgg, discord and bot variables",
 			NameLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "проверка",
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Проверить переменные startgg, discord, и бота.",
 			},
+			DMPermission: &dmPermission,
 		},
 		{
 			Name:        "set-event",
-			Description: "Set event in configuration bot for getting all phaseGroups",
+			Description: "Set an event in the bot configuration to retrieve all phaseGroups",
 			Options: []*discordgo.ApplicationCommandOption{{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "link",
-				Description: "Link on event must including path: tournament/<tournament_name>/event/<event_name>",
+				Description: "The event reference must include the path: tournament/<tournament_name>/event/<event_name>",
 				Required:    true,
 				DescriptionLocalizations: map[discordgo.Locale]string{
 					discordgo.Russian: "Cсылка на ивент должна включать в себя путь: tournament/<название_турнира>/event/<название_ивента>",
@@ -36,31 +37,33 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Установить идентификатор ивента в конфигурацию бота для получения всех групп",
 			},
+			DMPermission: &dmPermission,
 		},
 		{
 			Name:        "start-sending",
-			Description: "Start sending invite-messages to members tournament",
+			Description: "Start sending out invitations to tournament participants",
 			NameLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "начать-рассылку",
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Начать рассылку инвайт-сообщений участникам турнира",
 			},
+			DMPermission: &dmPermission,
 		},
 		{
 			Name:        "stop-sending",
-			Description: "Stop sending invite-messages to tournament sets",
+			Description: "Stop sending invitations to tournament participants",
 			NameLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "остановить-рассылку",
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Остановить рассылку инвайт-сообщений участникам турнира",
 			},
+			DMPermission: &dmPermission,
 		},
-
 		{
 			Name:        "edit-rules",
-			Description: "Edit rule matches",
+			Description: "Edit match rules",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
@@ -253,6 +256,7 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Редактировать правила матчей в сете",
 			},
+			DMPermission: &dmPermission,
 		},
 		{
 			Name:        "edit-stream-lobby",
@@ -388,6 +392,7 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Редактировать конфигурацию лобби для стрима",
 			},
+			DMPermission: &dmPermission,
 		},
 		{
 			Name:        "edit-logo-tournament",
@@ -407,6 +412,7 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Редактировать ссылку на логотип турнира",
 			},
+			DMPermission: &dmPermission,
 		},
 	}
 }

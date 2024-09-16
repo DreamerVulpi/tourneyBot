@@ -54,7 +54,7 @@ var En = Lang{
 	ErrorMessage: ErrorMessage{
 		Input:   "Your input data isn't correct",
 		Respond: "Сan't respond on message",
-		NoData:  "No data",
+		NoData:  "N/D",
 	},
 	ResponseMessage: ResponseMessage{
 		Starting: "Starting sending...",

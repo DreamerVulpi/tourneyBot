@@ -8,8 +8,6 @@ import (
 	"github.com/dreamervulpi/tourneybot/locale"
 )
 
-// TODO: REFACTOR CODE
-
 type responseLocale struct {
 	errorMsg       locale.ErrorMessage
 	vdMsg          locale.ViewDataMessage
@@ -40,11 +38,19 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 		if c.tournament.Rules.Stage != "any" {
 			stage = c.tournament.Rules.Stage
 		}
+		tekkenId := player.opponent.tekkenID
+		if len(tekkenId) == 0 {
+			tekkenId = local.ErrorMessage.NoData
+		}
+		discordId := player.opponent.discordID
+		if len(discordId) == 0 {
+			discordId = local.ErrorMessage.NoData
+		}
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.InviteMessage.MessageHeader, Value: ""},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
-			{Name: local.InviteMessage.TekkenID, Value: fmt.Sprintf("```%v```", player.opponent.tekkenID), Inline: true},
-			{Name: local.InviteMessage.Discord, Value: fmt.Sprintf("<@%v>", player.opponent.discordID), Inline: true},
+			{Name: local.InviteMessage.TekkenID, Value: fmt.Sprintf("```%v```", tekkenId), Inline: true},
+			{Name: local.InviteMessage.Discord, Value: fmt.Sprintf("<@%v>", discordId), Inline: true},
 
 			{Name: local.InviteMessage.CheckIn, Value: link},
 			{Name: fmt.Sprintf(local.InviteMessage.Warning, c.tournament.Rules.Waiting), Value: ""},
@@ -152,10 +158,15 @@ func (c *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 		conn = c.tournament.Stream.Conn
 	}
 
+	slug := c.slug
+	if len(slug) == 0 {
+		slug = local.ErrorMessage.NoData
+	}
+
 	fields := []*discordgo.MessageEmbedField{
 		{Name: local.ViewDataMessage.Title},
 		{Name: "**Slug**", Value: fmt.Sprintln(local.ViewDataMessage.Description), Inline: true},
-		{Value: fmt.Sprintf("```%v```", c.slug)},
+		{Value: fmt.Sprintf("```%v```", slug)},
 
 		{Name: local.ViewDataMessage.MessageRulesHeader},
 		{Name: local.InviteMessage.Format, Value: fmt.Sprintf(local.InviteMessage.FT, c.tournament.Rules.Format) + fmt.Sprintf(local.InviteMessage.FormatDescription, c.tournament.Rules.Format), Inline: true},

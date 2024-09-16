@@ -100,9 +100,9 @@ func (c *commandHandler) Process(s *discordgo.Session) {
 				return
 			}
 			log.Println("sending messages: DONE!")
-			// TODO: TIMER 5 MINUTES
+
 			log.Println("sending messages: 5 minutes waiting...")
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Minute)
 		case <-c.stop:
 			log.Println("sending messages: STOPPED!")
 			return
@@ -150,6 +150,9 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 						log.Println(errors.New("error get sets"))
 					}
 					for _, set := range sets {
+						if len(set.Slots) != 2 {
+							continue
+						}
 						go func() {
 							// TODO:  player1
 							// player1, err := c.searchContactDiscord(s, set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord)
