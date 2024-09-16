@@ -1,10 +1,8 @@
 # TourneyBot
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot)
+[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot) [Русский раздел](#русский)
 
-
-English
----
+## English
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
@@ -14,7 +12,6 @@ Using the open API [startgg](https://www.start.gg/) the bot receives data about 
 
 If you want to help the project, suggest ideas and developments in your [pull requests](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
-<br>
 <br>
 
 ## Features
@@ -110,8 +107,7 @@ All commands have a description and the necessary tips for their execution.
 | `/edit-stream-lobby area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Edit stream-lobby configurations |
 | `/edit-logo-tournament url:<url>` | Edit the link to the tournament logo |
 
-Русский
----
+## Русский
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
@@ -119,9 +115,8 @@ TourneyBot проект для организаторов турнира пла�
 
 Используя открытое API [startgg](https://www.start.gg/) бот получает данные о турнире в котором есть группы, в которых есть сеты, в которых есть участники. После отправляются сообщения участникам турнира, которые находятся на discord сервере организатора.
 
-Если хотите помочь проекту, предлагайте идеи и разработки в ваших [пул рекв](https://github.com/DreamerVulpi/tourneybot/pulls).  
+Если хотите помочь проекту, предлагайте идеи и разработки в ваших [пул реквестах](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
-<br>
 <br>
 
 ## Особенности
