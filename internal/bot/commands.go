@@ -2,7 +2,7 @@ package bot
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneybot/config"
+	"github.com/dreamervulpi/tourneyBot/config"
 )
 
 func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {

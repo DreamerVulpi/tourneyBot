@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneybot/internal/startgg"
+	"github.com/dreamervulpi/tourneyBot/startgg"
 )
 
 type PlayerData struct {

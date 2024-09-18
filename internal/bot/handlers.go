@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneybot/config"
-	"github.com/dreamervulpi/tourneybot/internal/startgg"
+	"github.com/dreamervulpi/tourneyBot/config"
+	"github.com/dreamervulpi/tourneyBot/startgg"
 )
 
 type commandHandler struct {
