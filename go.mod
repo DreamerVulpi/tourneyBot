@@ -1,4 +1,4 @@
-module github.com/dreamervulpi/tourneybot
+module github.com/dreamervulpi/tourneyBot
 
 go 1.22.1
 
