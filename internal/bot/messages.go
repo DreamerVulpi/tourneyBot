@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneybot/locale"
+	"github.com/dreamervulpi/tourneyBot/locale"
 )
 
 type responseLocale struct {
@@ -47,7 +47,7 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 			discordId = local.ErrorMessage.NoData
 		}
 		fields := []*discordgo.MessageEmbedField{
-			{Name: local.InviteMessage.MessageHeader, Value: ""},
+			{Name: local.InviteMessage.MessageHeader},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
 			{Name: local.InviteMessage.TekkenID, Value: fmt.Sprintf("```%v```", tekkenId), Inline: true},
 			{Name: local.InviteMessage.Discord, Value: fmt.Sprintf("<@%v>", discordId), Inline: true},
@@ -55,7 +55,7 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 			{Name: local.InviteMessage.CheckIn, Value: link},
 			{Name: fmt.Sprintf(local.InviteMessage.Warning, c.tournament.Rules.Waiting), Value: ""},
 
-			{Name: local.InviteMessage.SettingsHeader, Value: ""},
+			{Name: local.InviteMessage.SettingsHeader},
 			{Name: local.InviteMessage.Format, Value: fmt.Sprintf(local.InviteMessage.FT, c.tournament.Rules.Format) + fmt.Sprintf(local.InviteMessage.FormatDescription, c.tournament.Rules.Format), Inline: true},
 			{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
 			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", c.tournament.Rules.Rounds), Inline: true},
@@ -101,12 +101,10 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 		}
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.StreamLobbyMessage.StreamLink, Value: stream},
-			{Name: local.StreamLobbyMessage.MessageHeader, Value: ""},
+			{Name: local.StreamLobbyMessage.MessageHeader, Value: link},
 			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, c.tournament.Rules.Waiting)},
-			{Name: "", Value: link, Inline: true},
 
-			{Name: local.StreamLobbyMessage.ParamsHeader, Value: ""},
-			{Name: "", Value: ""},
+			{Name: local.StreamLobbyMessage.ParamsHeader},
 			{Name: local.StreamLobbyMessage.Area, Value: area, Inline: true},
 			{Name: local.StreamLobbyMessage.Language, Value: lang, Inline: true},
 			{Name: local.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},

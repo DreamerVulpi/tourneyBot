@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 
-	"github.com/dreamervulpi/tourneybot/config"
-	"github.com/dreamervulpi/tourneybot/internal/bot"
+	"github.com/dreamervulpi/tourneyBot/config"
+	"github.com/dreamervulpi/tourneyBot/internal/bot"
 )
 
 func main() {
