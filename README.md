@@ -1,6 +1,6 @@
 # TourneyBot
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot) [Русский раздел](#русский)
+[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot) [![Russia](https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/28px-Flag_of_Russia.svg.png)](#русский)
 
 ## English
 
@@ -13,6 +13,14 @@ Using the open API [startgg](https://www.start.gg/) the bot receives data about 
 If you want to help the project, suggest ideas and developments in your [pull requests](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
 <br>
+
+## To be realized in the future
+* SF6 support;
+* Different battle formats for different stages of the tournament;
+* Dynamically changing time interval until disqualification from the tournament with each repeated message
+* Role assignment on the Discord server;
+* Loading player data from a ```.csv``` format table;
+* New commands (List contacts and etc.);
 
 ## Features
 
@@ -107,7 +115,7 @@ All commands have a description and the necessary tips for their execution.
 | `/edit-stream-lobby area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Edit stream-lobby configurations |
 | `/edit-logo-tournament url:<url>` | Edit the link to the tournament logo |
 
-## Русский
+## Русский 
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
@@ -118,6 +126,14 @@ TourneyBot проект для организаторов турнира пла�
 Если хотите помочь проекту, предлагайте идеи и разработки в ваших [пул реквестах](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
 <br>
+
+## Будет реализовано в будущем
+* Поддержка игры SF6;
+* Различные форматы сражений для разных этапов турнира;
+* Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
+* Выдача ролей в Дискорд сервере;
+* Загрузка данных игроков из файла таблицы формата ```.csv```;
+* Новые команды (Список контактов и т.д.);
 
 ## Особенности
 
