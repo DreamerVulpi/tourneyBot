@@ -34,15 +34,15 @@ type discordUser struct {
 
 func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (discordUser, error) {
 
-	discordID := strings.SplitN(nickname, "#", -1)
+	name := strings.SplitN(nickname, "#", -1)
 
-	member, err := s.GuildMembersSearch(c.guildID, discordID[0], 1)
+	member, err := s.GuildMembersSearch(c.guildID, name[0], 1)
 	if err != nil {
 		return discordUser{}, err
 	}
 
 	if len(member) != 1 {
-		return discordUser{}, fmt.Errorf("searchContactDiscord: not finded %v", discordID[0])
+		return discordUser{}, fmt.Errorf("searchContactDiscord: not finded %v", name[0])
 	}
 
 	// Get list rolesId including in locale (en is default)
@@ -53,7 +53,8 @@ func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname str
 		}
 	}
 	return discordUser{
-		discordID: (*member[0]).User.ID,
+		// discordID: (*member[0]).User.ID,
+		discordID: strings.SplitN((*member[0]).User.ID, "#", -1)[0],
 		locales:   roles,
 	}, nil
 }
@@ -72,7 +73,7 @@ func (c *commandHandler) templateMessage(fields []*discordgo.MessageEmbedField) 
 		Fields: fields,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text:    "by DreamerVulpi | https://www.twitch.tv/dreamervulpi",
-			IconURL: "https://i.imgur.com/a/dVzfqkT",
+			IconURL: "https://i.imgur.com/FcuAfRw.png",
 		},
 	}
 }
@@ -127,6 +128,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 	if err != nil {
 		return err
 	}
+
 	for _, phaseGroup := range phaseGroups {
 		state, err := c.client.GetPhaseGroupState(phaseGroup.Id)
 		if err != nil {
@@ -146,6 +148,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 		} else {
 			pages = int(math.Round(float64(total / 60)))
 		}
+
 		if state == startgg.InProcess {
 			for i := 0; i < pages; i++ {
 				sets, err := c.client.GetSets(phaseGroup.Id, pages, 60)
@@ -153,21 +156,24 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 					log.Println(errors.New("error get sets"))
 				}
 				for _, set := range sets {
+					// сhecking the presence of a player in the slot
 					if len(set.Slots) != 2 || len(set.Slots) == 0 {
 						continue
 					}
+					// skip slots with empty id
 					if set.Slots[0].Entrant.Id == 0 || set.Slots[1].Entrant.Id == 0 {
 						continue
 					}
 
 					go func() {
+						// discord contact check
 						var discord1 string
 						if set.Slots[0].Entrant.Participants == nil || set.Slots[0].Entrant.Participants[0].User.Authorizations == nil {
 							discord1 = "N/D"
 						} else {
 							discord1 = set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord
 						}
-
+						// discord contact check
 						var discord2 string
 						if set.Slots[1].Entrant.Participants == nil || set.Slots[1].Entrant.Participants[0].User.Authorizations == nil {
 							discord2 = "N/D"
@@ -184,9 +190,6 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 						if err != nil {
 							log.Printf("sending message: Not finded member in discord (%v)", discord2)
 						}
-
-						// dv, _ := c.searchContactDiscord(s, "DreamerVulpi")
-						// fcuk, _ := c.searchContactDiscord(s, "fcuk_limit")
 
 						toPlayer1 := PlayerData{
 							tournament:   tournament.Name,
@@ -213,15 +216,18 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 							},
 						}
 
+						// log.Println(toPlayer1)
+						// log.Println(toPlayer2)
+
 						if discord1 != "N/D" {
 							c.sendMessage(s, toPlayer1)
+							log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
 						}
 
 						if discord2 != "N/D" {
 							c.sendMessage(s, toPlayer2)
+							log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
 						}
-
-						log.Printf("%v vs %v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
 					}()
 				}
 				log.Printf("Checked phaseGroup(%v)", phaseGroup.Id)
