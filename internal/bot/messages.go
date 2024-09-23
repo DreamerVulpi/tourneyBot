@@ -42,7 +42,7 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 		if len(tekkenId) == 0 {
 			tekkenId = local.ErrorMessage.NoData
 		}
-		discordId := player.opponent.discordID
+		discordId := fmt.Sprintf("<@%v>", player.opponent.discordID)
 		if len(discordId) == 0 {
 			discordId = local.ErrorMessage.NoData
 		}
@@ -50,7 +50,7 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 			{Name: local.InviteMessage.MessageHeader},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
 			{Name: local.InviteMessage.TekkenID, Value: fmt.Sprintf("```%v```", tekkenId), Inline: true},
-			{Name: local.InviteMessage.Discord, Value: fmt.Sprintf("<@%v>", discordId), Inline: true},
+			{Name: local.InviteMessage.Discord, Value: discordId, Inline: true},
 
 			{Name: local.InviteMessage.CheckIn, Value: link},
 			{Name: fmt.Sprintf(local.InviteMessage.Warning, c.tournament.Rules.Waiting), Value: ""},

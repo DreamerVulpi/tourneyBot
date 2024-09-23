@@ -35,17 +35,7 @@ const (
 			}
 		}
 	}
-		`
-
-	// InFuture: WINNER FUNCTION
-	getWinner = `
-	query getWinner($setId: ID!){
-		set(id:$setId) {
-			winnerId
-		}
-	}
 	`
-
 	getPhaseGroupState = `
 	query getPhaseGroupState($phaseGroupId: ID!){
 		phaseGroup(id:$phaseGroupId){

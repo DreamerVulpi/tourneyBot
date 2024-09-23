@@ -58,6 +58,10 @@ func (cmd *commandHandler) messageEmbed(title string, fields []*discordgo.Messag
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: cmd.logoTournament,
 		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text:    "by DreamerVulpi | https://www.twitch.tv/dreamervulpi",
+			IconURL: "https://i.imgur.com/FcuAfRw.png",
+		},
 	}
 }
 
