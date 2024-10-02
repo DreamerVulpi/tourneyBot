@@ -187,7 +187,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 			pages = int(math.Round(float64(total / 60)))
 		}
 
-		if state == startgg.IsDone {
+		if state == startgg.InProcess {
 			for i := 0; i < pages; i++ {
 				sets, err := c.client.GetSets(phaseGroup.Id, pages, 60)
 				if err != nil {
