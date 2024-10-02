@@ -33,7 +33,6 @@ type discordUser struct {
 }
 
 func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (discordUser, error) {
-
 	name := strings.SplitN(nickname, "#", -1)
 
 	member, err := s.GuildMembersSearch(c.guildID, name[0], 1)
@@ -57,6 +56,45 @@ func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname str
 		discordID: strings.SplitN((*member[0]).User.ID, "#", -1)[0],
 		locales:   roles,
 	}, nil
+}
+
+func (c *commandHandler) checkContact(object []startgg.Participants) contactData {
+	var discord string
+	if object == nil {
+		discord = "N/D"
+	} else {
+		if object[0].User.Authorizations == nil {
+			value, ok := c.discordContacts[object[0].GamerTag]
+			if ok {
+				discord = value.discord
+			} else {
+				discord = "N/D"
+			}
+		} else {
+			discord = object[0].User.Authorizations[0].Discord
+		}
+	}
+
+	var tekkenID string
+	if object == nil {
+		tekkenID = "N/D"
+	} else {
+		if object[0].ConnectedAccounts.Tekken.TekkenID == "" {
+			value, ok := c.discordContacts[object[0].GamerTag]
+			if ok {
+				tekkenID = value.tekkenID
+			} else {
+				tekkenID = "N/D"
+			}
+		} else {
+			tekkenID = object[0].ConnectedAccounts.Tekken.TekkenID
+		}
+	}
+
+	return contactData{
+		discord:  discord,
+		tekkenID: tekkenID,
+	}
 }
 
 func (c *commandHandler) templateMessage(fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
@@ -149,7 +187,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 			pages = int(math.Round(float64(total / 60)))
 		}
 
-		if state == startgg.InProcess {
+		if state == startgg.IsDone {
 			for i := 0; i < pages; i++ {
 				sets, err := c.client.GetSets(phaseGroup.Id, pages, 60)
 				if err != nil {
@@ -167,28 +205,17 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 
 					go func() {
 						// discord contact check
-						var discord1 string
-						if set.Slots[0].Entrant.Participants == nil || set.Slots[0].Entrant.Participants[0].User.Authorizations == nil {
-							discord1 = "N/D"
-						} else {
-							discord1 = set.Slots[0].Entrant.Participants[0].User.Authorizations[0].Discord
-						}
-						// discord contact check
-						var discord2 string
-						if set.Slots[1].Entrant.Participants == nil || set.Slots[1].Entrant.Participants[0].User.Authorizations == nil {
-							discord2 = "N/D"
-						} else {
-							discord2 = set.Slots[1].Entrant.Participants[0].User.Authorizations[0].Discord
+						contactsPlayer1 := c.checkContact(set.Slots[0].Entrant.Participants)
+						contactsPlayer2 := c.checkContact(set.Slots[1].Entrant.Participants)
+
+						player1, err := c.searchContactDiscord(s, contactsPlayer1.discord)
+						if err != nil {
+							log.Printf("sending message: Not finded member in discord (%v)", contactsPlayer1.discord)
 						}
 
-						player1, err := c.searchContactDiscord(s, discord1)
+						player2, err := c.searchContactDiscord(s, contactsPlayer2.discord)
 						if err != nil {
-							log.Printf("sending message: Not finded member in discord (%v)", discord1)
-						}
-
-						player2, err := c.searchContactDiscord(s, discord2)
-						if err != nil {
-							log.Printf("sending message: Not finded member in discord (%v)", discord2)
+							log.Printf("sending message: Not finded member in discord (%v)", contactsPlayer2.discord)
 						}
 
 						toPlayer1 := PlayerData{
@@ -219,12 +246,12 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 						// log.Println(toPlayer1)
 						// log.Println(toPlayer2)
 
-						if discord1 != "N/D" {
+						if contactsPlayer1.discord != "N/D" {
 							c.sendMessage(s, toPlayer1)
 							log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
 						}
 
-						if discord2 != "N/D" {
+						if contactsPlayer2.discord != "N/D" {
 							c.sendMessage(s, toPlayer2)
 							log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
 						}

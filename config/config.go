@@ -48,10 +48,15 @@ type Logo struct {
 	Img string `toml:"img"`
 }
 
+type Csv struct {
+	NameFile string `toml:"nameFile"`
+}
+
 type ConfigTournament struct {
 	Rules  RulesMatches `toml:"rules"`
 	Stream StreamLobby  `toml:"stream"`
 	Logo   Logo         `toml:"logo"`
+	Csv    Csv          `toml:"csv"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -106,6 +111,9 @@ func LoadTournament(file string) (ConfigTournament, error) {
 		return ConfigTournament{}, errors.New("stream: field passcode is empty")
 	case l.Rules.Waiting > 30 || l.Rules.Waiting <= 0:
 		return ConfigTournament{}, errors.New("waiting time: isn't correct")
+	case len(l.Csv.NameFile) == 0:
+		log.Println(errors.New("csv: nameFile field is empty").Error())
+		return l, nil
 	case len(l.Logo.Img) == 0:
 		log.Println(errors.New("tournament: logo link is empty").Error())
 		return l, nil

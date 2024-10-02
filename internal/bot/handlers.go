@@ -15,18 +15,19 @@ import (
 )
 
 type commandHandler struct {
-	slug           string
-	guildID        string
-	appID          string
-	logo           string
-	logoTournament string
-	stop           chan struct{}
-	m              *discordgo.MessageCreate
-	client         *startgg.Client
-	tournament     config.ConfigTournament
-	rulesMatches   config.RulesMatches
-	streamLobby    config.StreamLobby
-	rolesIdList    config.ConfigRolesIdDiscord
+	slug            string
+	guildID         string
+	appID           string
+	logo            string
+	logoTournament  string
+	stop            chan struct{}
+	m               *discordgo.MessageCreate
+	client          *startgg.Client
+	tournament      config.ConfigTournament
+	rulesMatches    config.RulesMatches
+	streamLobby     config.StreamLobby
+	rolesIdList     config.ConfigRolesIdDiscord
+	discordContacts map[string]contactData
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -236,3 +237,8 @@ func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo
 		log.Println(fmt.Errorf("editLogoTournament: %v", local.errorMsg.Respond))
 	}
 }
+
+// TODO: New command -> getContactPlayers
+// func (cmd *commandHandler) getContactPlayers(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+// }
