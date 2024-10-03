@@ -238,7 +238,53 @@ func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo
 	}
 }
 
-// TODO: New command -> getContactPlayers
-// func (cmd *commandHandler) getContactPlayers(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (cmd *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	local := cmd.msgResponse(i.Locale.String())
+	size := len(cmd.discordContacts)
+	if size != 0 {
+		go func() {
+			response(s, i, "Loading contacts from csv file...")
+		}()
 
-// }
+		fields := []*discordgo.MessageEmbedField{}
+		counter := 0
+		for nickname, dc := range cmd.discordContacts {
+			if counter < 25 {
+				usr, err := cmd.searchContactDiscord(s, nickname)
+				if err != nil {
+					log.Printf("viewContacts: %v", err.Error())
+					fields = append(fields, &discordgo.MessageEmbedField{
+						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.discord, dc.gameID), Inline: true,
+					})
+				} else {
+					fields = append(fields, &discordgo.MessageEmbedField{
+						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>__GameID:__\n```%v```", usr.discordID, dc.gameID), Inline: true,
+					})
+				}
+				counter++
+			} else {
+				embed := cmd.messageEmbed("", fields)
+				if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
+					log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+				}
+				fields = []*discordgo.MessageEmbedField{}
+				counter = 0
+			}
+		}
+
+		embed := cmd.messageEmbed("", fields)
+		if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
+			log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+		}
+	} else {
+		embed := []*discordgo.MessageEmbed{}
+
+		embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+			{Name: "", Value: local.errorMsg.NoData},
+		}))
+
+		if err := cmd.responseEmbed(s, i, embed); err != nil {
+			log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+		}
+	}
+}

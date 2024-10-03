@@ -16,34 +16,19 @@ import (
 )
 
 type contactData struct {
-	discord  string
-	tekkenID string
+	discord string
+	gameID  string
 }
 
-func Start(cfg config.Config, t config.ConfigTournament) error {
-	session, err := discordgo.New(cfg.Discord.Token)
-	if err != nil {
-		return err
-	}
-
-	err = session.Open()
-	if err != nil {
-		return err
-	}
-
-	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
-
-	client := startgg.NewClient(cfg.Startgg.Token, &http.Client{
-		Timeout: time.Second * 10,
-	})
-
-	// Get discord contacts from csv file
+// Get discord contacts from csv file
+func loadCSV(nameFile string) map[string]contactData {
 	contacts := map[string]contactData{}
-	f, err := os.Open("config/" + t.Csv.NameFile)
+	f, err := os.Open("config/" + nameFile)
 	if err != nil {
 		log.Println(err)
+		return map[string]contactData{}
 	} else {
-		if len(t.Csv.NameFile) != 0 {
+		if len(nameFile) != 0 {
 			defer f.Close()
 
 			csvReader := csv.NewReader(f)
@@ -80,22 +65,40 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 					discordID = "N/D"
 				}
 
-				var tekkenID string
+				var gameID string
 				if len(attendee[indexConnectColumn]) != 0 {
 					rawTekkenID := strings.SplitN(attendee[indexConnectColumn], " ", -1)
-					tekkenID = strings.ReplaceAll(rawTekkenID[1], ",", "")
+					gameID = strings.ReplaceAll(rawTekkenID[1], ",", "")
 				} else {
-					tekkenID = "N/D"
+					gameID = "N/D"
 				}
 
 				contacts[attendee[indexGamerTagColumn]] = contactData{
-					discord:  discordID,
-					tekkenID: tekkenID,
+					discord: discordID,
+					gameID:  gameID,
 				}
 			}
 		}
 	}
-	log.Println(contacts)
+	return contacts
+}
+
+func Start(cfg config.Config, t config.ConfigTournament) error {
+	session, err := discordgo.New(cfg.Discord.Token)
+	if err != nil {
+		return err
+	}
+
+	err = session.Open()
+	if err != nil {
+		return err
+	}
+
+	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
+
+	client := startgg.NewClient(cfg.Startgg.Token, &http.Client{
+		Timeout: time.Second * 10,
+	})
 
 	cmdHandler := commandHandler{
 		guildID:    cfg.Discord.GuildID,
@@ -120,7 +123,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 		logoTournament:  t.Logo.Img,
 		appID:           cfg.Discord.AppID,
 		rolesIdList:     cfg.Roles,
-		discordContacts: contacts,
+		discordContacts: loadCSV(t.Csv.NameFile),
 	}
 
 	commandHandlers["check"] = cmdHandler.viewData
@@ -130,6 +133,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 	commandHandlers["edit-rules"] = cmdHandler.editRuleMatches
 	commandHandlers["edit-stream-lobby"] = cmdHandler.editStreamLobby
 	commandHandlers["edit-logo-tournament"] = cmdHandler.editLogoTournament
+	commandHandlers["contacts"] = cmdHandler.viewContacts
 
 	session.AddHandler(func(
 		s *discordgo.Session,

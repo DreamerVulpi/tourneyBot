@@ -82,7 +82,7 @@ func (c *commandHandler) checkContact(object []startgg.Participants) contactData
 		if object[0].ConnectedAccounts.Tekken.TekkenID == "" {
 			value, ok := c.discordContacts[object[0].GamerTag]
 			if ok {
-				tekkenID = value.tekkenID
+				tekkenID = value.gameID
 			} else {
 				tekkenID = "N/D"
 			}
@@ -92,8 +92,8 @@ func (c *commandHandler) checkContact(object []startgg.Participants) contactData
 	}
 
 	return contactData{
-		discord:  discord,
-		tekkenID: tekkenID,
+		discord: discord,
+		gameID:  tekkenID,
 	}
 }
 
