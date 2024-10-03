@@ -250,15 +250,16 @@ func (cmd *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.Inter
 		counter := 0
 		for nickname, dc := range cmd.discordContacts {
 			if counter < 25 {
+				// TODO: change to loadData in initialization
 				usr, err := cmd.searchContactDiscord(s, nickname)
 				if err != nil {
 					log.Printf("viewContacts: %v", err.Error())
 					fields = append(fields, &discordgo.MessageEmbedField{
-						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.discord, dc.gameID), Inline: true,
+						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.discord, dc.gameID), Inline: false,
 					})
 				} else {
 					fields = append(fields, &discordgo.MessageEmbedField{
-						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>__GameID:__\n```%v```", usr.discordID, dc.gameID), Inline: true,
+						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>__GameID:__\n```%v```", usr.discordID, dc.gameID), Inline: false,
 					})
 				}
 				counter++
