@@ -15,7 +15,18 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 				discordgo.Russian: "проверка",
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "Проверить переменные startgg, discord, и бота.",
+				discordgo.Russian: "Проверить переменные startgg, discord, и бота",
+			},
+			DMPermission: &dmPermission,
+		},
+		{
+			Name:        "contacts",
+			Description: "Get list contact players from csv file",
+			NameLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "контакты",
+			},
+			DescriptionLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "Получить список контактов игроков из csv файла",
 			},
 			DMPermission: &dmPermission,
 		},

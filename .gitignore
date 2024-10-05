@@ -1,2 +1,4 @@
 *.toml
 *.exe
+*.csv
+.vscode

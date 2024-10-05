@@ -1,17 +1,87 @@
 package bot
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/startgg"
 )
+
+type contactData struct {
+	discord string
+	gameID  string
+}
+
+// Get discord contacts from csv file
+func loadCSV(nameFile string) map[string]contactData {
+	contacts := map[string]contactData{}
+	f, err := os.Open("config/" + nameFile)
+	if err != nil {
+		log.Println(err)
+		return map[string]contactData{}
+	} else {
+		if len(nameFile) != 0 {
+			defer f.Close()
+
+			csvReader := csv.NewReader(f)
+			records, _ := csvReader.ReadAll()
+
+			// Search index for get data
+			var indexDiscordColumn int
+			var indexGamerTagColumn int
+			var indexConnectColumn int
+			for index, column := range records[0] {
+				parts := strings.SplitN(column, " ", -1)
+				for _, part := range parts {
+					if part == "Discord!" {
+						indexDiscordColumn = index
+					}
+				}
+				if column == "Short GamerTag" {
+					indexGamerTagColumn = index
+				}
+				if column == "Connect" {
+					indexConnectColumn = index
+				}
+			}
+
+			for i, attendee := range records {
+				if i == 0 {
+					continue
+				}
+
+				var discordID string
+				if len(attendee[indexDiscordColumn]) != 0 {
+					discordID = attendee[indexDiscordColumn]
+				} else {
+					discordID = "N/D"
+				}
+
+				var gameID string
+				if len(attendee[indexConnectColumn]) != 0 {
+					rawTekkenID := strings.SplitN(attendee[indexConnectColumn], " ", -1)
+					gameID = strings.ReplaceAll(rawTekkenID[1], ",", "")
+				} else {
+					gameID = "N/D"
+				}
+
+				contacts[attendee[indexGamerTagColumn]] = contactData{
+					discord: discordID,
+					gameID:  gameID,
+				}
+			}
+		}
+	}
+	return contacts
+}
 
 func Start(cfg config.Config, t config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
@@ -49,10 +119,11 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 			Conn:          t.Stream.Conn,
 			Passcode:      t.Stream.Passcode,
 		},
-		logo:           "https://i.imgur.com/n9SG5IL.png",
-		logoTournament: t.Logo.Img,
-		appID:          cfg.Discord.AppID,
-		rolesIdList:    cfg.Roles,
+		logo:            "https://i.imgur.com/n9SG5IL.png",
+		logoTournament:  t.Logo.Img,
+		appID:           cfg.Discord.AppID,
+		rolesIdList:     cfg.Roles,
+		discordContacts: loadCSV(t.Csv.NameFile),
 	}
 
 	commandHandlers["check"] = cmdHandler.viewData
@@ -62,6 +133,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 	commandHandlers["edit-rules"] = cmdHandler.editRuleMatches
 	commandHandlers["edit-stream-lobby"] = cmdHandler.editStreamLobby
 	commandHandlers["edit-logo-tournament"] = cmdHandler.editLogoTournament
+	commandHandlers["contacts"] = cmdHandler.viewContacts
 
 	session.AddHandler(func(
 		s *discordgo.Session,
