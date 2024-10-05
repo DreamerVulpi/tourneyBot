@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -15,19 +17,20 @@ import (
 )
 
 type commandHandler struct {
-	slug            string
-	guildID         string
-	appID           string
-	logo            string
-	logoTournament  string
-	stop            chan struct{}
-	m               *discordgo.MessageCreate
-	client          *startgg.Client
-	tournament      config.ConfigTournament
-	rulesMatches    config.RulesMatches
-	streamLobby     config.StreamLobby
-	rolesIdList     config.ConfigRolesIdDiscord
-	discordContacts map[string]contactData
+	slug                 string
+	guildID              string
+	appID                string
+	logo                 string
+	logoTournament       string
+	stop                 chan struct{}
+	m                    *discordgo.MessageCreate
+	client               *startgg.Client
+	tournament           config.ConfigTournament
+	rulesMatches         config.RulesMatches
+	streamLobby          config.StreamLobby
+	rolesIdList          config.ConfigRolesIdDiscord
+	discordContacts      map[string]contactData
+	embedDiscordContacts []*discordgo.MessageEmbed
 }
 
 func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string) error {
@@ -238,54 +241,90 @@ func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo
 	}
 }
 
+func (cmd *commandHandler) getDiscordContacts(s *discordgo.Session) {
+	sliceMessages := []*discordgo.MessageEmbed{}
+	fields := []*discordgo.MessageEmbedField{}
+	counter := 0
+	for nickname, dc := range cmd.discordContacts {
+		if counter < 25 {
+			usr, err := cmd.searchContactDiscord(s, nickname)
+			if err != nil {
+				log.Printf("viewContacts: %v", err.Error())
+				fields = append(fields, &discordgo.MessageEmbedField{
+					Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.discord, dc.gameID), Inline: false,
+				})
+			} else {
+				fields = append(fields, &discordgo.MessageEmbedField{
+					Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>__GameID:__\n```%v```", usr.discordID, dc.gameID), Inline: false,
+				})
+			}
+			counter++
+		} else {
+			embed := cmd.messageEmbed("", fields)
+			sliceMessages = append(sliceMessages, embed)
+			fields = []*discordgo.MessageEmbedField{}
+			counter = 0
+		}
+	}
+
+	embed := cmd.messageEmbed("", fields)
+	sliceMessages = append(sliceMessages, embed)
+	cmd.embedDiscordContacts = sliceMessages
+}
+
 func (cmd *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	local := cmd.msgResponse(i.Locale.String())
 	size := len(cmd.discordContacts)
-	if size != 0 {
-		go func() {
-			response(s, i, "Loading contacts from csv file...")
-		}()
+	if len(cmd.embedDiscordContacts) == 0 {
+		cts, err := os.ReadFile("contacts.json")
+		if err != nil {
+			if size != 0 {
+				go func() {
+					response(s, i, "Loading contacts from csv file...")
+				}()
 
-		fields := []*discordgo.MessageEmbedField{}
-		counter := 0
-		for nickname, dc := range cmd.discordContacts {
-			if counter < 25 {
-				// TODO: change to loadData in initialization
-				usr, err := cmd.searchContactDiscord(s, nickname)
+				cmd.getDiscordContacts(s)
+
+				file, err := json.MarshalIndent(cmd.embedDiscordContacts, "", " ")
 				if err != nil {
-					log.Printf("viewContacts: %v", err.Error())
-					fields = append(fields, &discordgo.MessageEmbedField{
-						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.discord, dc.gameID), Inline: false,
-					})
-				} else {
-					fields = append(fields, &discordgo.MessageEmbedField{
-						Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>__GameID:__\n```%v```", usr.discordID, dc.gameID), Inline: false,
-					})
+					log.Println(err.Error())
 				}
-				counter++
+
+				err = os.WriteFile("contacts.json", file, 0644)
+				if err != nil {
+					log.Println(err.Error())
+				}
+
+				for _, embed := range cmd.embedDiscordContacts {
+					if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
+						log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+					}
+				}
 			} else {
-				embed := cmd.messageEmbed("", fields)
+				embed := []*discordgo.MessageEmbed{}
+
+				embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+					{Name: "", Value: local.errorMsg.NoData},
+				}))
+
+				if err := cmd.responseEmbed(s, i, embed); err != nil {
+					log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+				}
+			}
+		} else {
+			json.Unmarshal(cts, &cmd.embedDiscordContacts)
+
+			for _, embed := range cmd.embedDiscordContacts {
 				if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
 					log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 				}
-				fields = []*discordgo.MessageEmbedField{}
-				counter = 0
 			}
 		}
-
-		embed := cmd.messageEmbed("", fields)
-		if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
-			log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
-		}
 	} else {
-		embed := []*discordgo.MessageEmbed{}
-
-		embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
-			{Name: "", Value: local.errorMsg.NoData},
-		}))
-
-		if err := cmd.responseEmbed(s, i, embed); err != nil {
-			log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+		for _, embed := range cmd.embedDiscordContacts {
+			if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
+				log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+			}
 		}
 	}
 }
