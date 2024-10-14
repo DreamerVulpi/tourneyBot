@@ -24,7 +24,7 @@ type PlayerData struct {
 type opponentData struct {
 	discordID string
 	nickname  string
-	tekkenID  string
+	gameID    string
 }
 
 type discordUser struct {
@@ -95,6 +95,21 @@ func (c *commandHandler) checkContact(object []startgg.Participants) contactData
 		discord: discord,
 		gameID:  tekkenID,
 	}
+}
+
+func (c *commandHandler) checkGameID(gameIDS startgg.ConnectedAccounts) string {
+	var result string
+
+	if c.nameGame == "tekken" {
+		result = gameIDS.Tekken.TekkenID
+		return result
+	}
+	if c.nameGame == "sf6" {
+		result = gameIDS.SF6.GameID
+		return result
+	}
+
+	return "N/D"
 }
 
 func (c *commandHandler) templateMessage(fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
@@ -219,27 +234,35 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 						}
 
 						toPlayer1 := PlayerData{
-							tournament:   tournament.Name,
-							setID:        set.Id,
+							tournament: tournament.Name,
+							setID:      set.Id,
+							// user: discordUser{
+							// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
+							// },
 							user:         player1, // Set player1
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
 							opponent: opponentData{
+								// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
 								discordID: player2.discordID, // Set player2
 								nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
-								tekkenID:  set.Slots[1].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+								gameID:    c.checkGameID(set.Slots[1].Entrant.Participants[0].ConnectedAccounts),
 							},
 						}
 						toPlayer2 := PlayerData{
-							tournament:   tournament.Name,
-							setID:        set.Id,
+							tournament: tournament.Name,
+							setID:      set.Id,
+							// user: discordUser{
+							// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
+							// },
 							user:         player2, // Set player2
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
 							opponent: opponentData{
+								// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 								discordID: player1.discordID, // Set player1
 								nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
-								tekkenID:  set.Slots[0].Entrant.Participants[0].ConnectedAccounts.Tekken.TekkenID,
+								gameID:    c.checkGameID(set.Slots[0].Entrant.Participants[0].ConnectedAccounts),
 							},
 						}
 

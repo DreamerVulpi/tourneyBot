@@ -6,7 +6,7 @@ var En = Lang{
 		Description:              "An invitation to the tournament, including all the necessary information.\n\n*This message was automatically generated. There is no need to reply. If you have any questions or need assistance, please contact one of the organizers' assistants.*",
 		MessageHeader:            "Your opponent's data",
 		Nickname:                 "**Nickname**",
-		TekkenID:                 "**Tekken ID**",
+		GameID:                   "**Game ID**",
 		Discord:                  "**Discord**",
 		CheckIn:                  "**Link to check-in**",
 		Warning:                  "You have %v min. to check-in before you are automatically disqualified.",

@@ -5,7 +5,7 @@ type InviteMessage struct {
 	Description              string
 	MessageHeader            string
 	Nickname                 string
-	TekkenID                 string
+	GameID                   string
 	Discord                  string
 	CheckIn                  string
 	Warning                  string

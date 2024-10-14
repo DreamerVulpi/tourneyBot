@@ -6,7 +6,7 @@
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
-TourneyBot is a project for tournament organizers on the [startgg](https://www.start.gg/) platform for the [Tekken 8](https://www.start.gg/game/tekken-8) game that helps solve the problem of interaction between players and organizers.
+TourneyBot is a project for tournament organizers on the [startgg](https://www.start.gg/) platform for the fighting games that helps solve the problem of interaction between players and organizers.
 
 Using the open API [startgg](https://www.start.gg/) the bot receives data about a tournament in which different groups with different sets and participants participate. Then messages are sent to the participants of the tournament, which are located on the discord server of the organizer.
 
@@ -15,13 +15,13 @@ If you want to help the project, suggest ideas and developments in your [pull re
 <br>
 
 ## To be realized in the future
-* SF6 support;
 * Different battle formats for different stages of the tournament;
 * Dynamically changing time interval until disqualification from the tournament with each repeated message
 * Role assignment on the Discord server;
 
 ## Features
 
+* Tekken 8 and Street Fighter 6 support;
 * Single and double elimination tournament formats are supported;
 * Sending messages to all tournament participants every 5 minutes;
 * Bot control and configuration of templates and variables via commands;
@@ -85,8 +85,15 @@ If you want to help the project, suggest ideas and developments in your [pull re
     waiting = 10            # Time before disqualification in minutes: 1-any
     crossplatform = true    # Enable: true | Disable: false
 
+
     [logo]
     img = "your link to image"
+
+    [game]
+    name = ""               # Game: tekken | sf6
+
+    [csv]
+    nameFile = "your name csv file"
     ```
 
 2. Invite a bot to your discord server;
@@ -120,7 +127,7 @@ All commands have a description and the necessary tips for their execution.
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
-TourneyBot проект для организаторов турнира платформы [startgg](https://www.start.gg/)  по игре [Tekken 8](https://www.start.gg/game/tekken-8) который помогает решить проблемы взаимодействия между игроками и организаторами.
+TourneyBot проект для организаторов турнира платформы [startgg](https://www.start.gg/) по файтинг играм, который помогает решить проблемы взаимодействия между игроками и организаторами.
 
 Используя открытое API [startgg](https://www.start.gg/) бот получает данные о турнире в котором есть группы, в которых есть сеты, в которых есть участники. После отправляются сообщения участникам турнира, которые находятся на discord сервере организатора.
 
@@ -129,13 +136,13 @@ TourneyBot проект для организаторов турнира пла�
 <br>
 
 ## Будет реализовано в будущем
-* Поддержка игры SF6;
 * Различные форматы сражений для разных этапов турнира;
 * Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
 * Выдача ролей в Дискорд сервере;
 
 ## Особенности
 
+* Поддержка Теккен 8 и SF6;
 * Поддержка форматов Single and double elimination;
 * Отправка сообщений всем участникам турнира каждые 5 минут;
 * Контролирование бота и изменение конфигурации шаблонов и переменных при помощи команд;
@@ -201,6 +208,12 @@ TourneyBot проект для организаторов турнира пла�
 
     [logo]
     img = "ваша ссылка на изображение"
+    
+    [game]
+    name = ""               # Игра: tekken | sf6
+
+    [csv]
+    nameFile = "ваше имя csv файла"
     ```
 
 2. Пригласите бота в ваш дискорд сервер;

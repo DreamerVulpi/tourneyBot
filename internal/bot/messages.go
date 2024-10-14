@@ -38,9 +38,9 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 		if c.tournament.Rules.Stage != "any" {
 			stage = c.tournament.Rules.Stage
 		}
-		tekkenId := player.opponent.tekkenID
-		if len(tekkenId) == 0 {
-			tekkenId = local.ErrorMessage.NoData
+		gameID := player.opponent.gameID
+		if len(gameID) == 0 {
+			gameID = local.ErrorMessage.NoData
 		}
 		discordId := fmt.Sprintf("<@%v>", player.opponent.discordID)
 		if len(discordId) == 0 {
@@ -49,7 +49,7 @@ func (c *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, chan
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.InviteMessage.MessageHeader},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
-			{Name: local.InviteMessage.TekkenID, Value: fmt.Sprintf("```%v```", tekkenId), Inline: true},
+			{Name: local.InviteMessage.GameID, Value: fmt.Sprintf("```%v```", gameID), Inline: true},
 			{Name: local.InviteMessage.Discord, Value: discordId, Inline: true},
 
 			{Name: local.InviteMessage.CheckIn, Value: link},

@@ -7,6 +7,14 @@ import (
 
 func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 	dmPermission := false
+	var stages []*discordgo.ApplicationCommandOptionChoice
+	if cmd.nameGame == "tekken" {
+		stages = choice(config.T8Stages)
+	}
+	if cmd.nameGame == "sf6" {
+		stages = choice(config.SF6Stages)
+	}
+
 	return []*discordgo.ApplicationCommand{
 		{
 			Name:        "check",
@@ -165,7 +173,7 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 					DescriptionLocalizations: map[discordgo.Locale]string{
 						discordgo.Russian: "Название арены | Любая",
 					},
-					Choices: append(choice(config.ListStages), &discordgo.ApplicationCommandOptionChoice{
+					Choices: append(stages, &discordgo.ApplicationCommandOptionChoice{
 						Name: "Any",
 						NameLocalizations: map[discordgo.Locale]string{
 							discordgo.Russian: "Любая",

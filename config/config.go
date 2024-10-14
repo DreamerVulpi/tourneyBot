@@ -17,6 +17,10 @@ type ConfigDiscordBot struct {
 	AppID   string `toml:"appID"`
 }
 
+type ConfigGame struct {
+	Name string `toml:"name"`
+}
+
 type ConfigRolesIdDiscord struct {
 	Ru string `toml:"ru"`
 }
@@ -57,6 +61,7 @@ type ConfigTournament struct {
 	Stream StreamLobby  `toml:"stream"`
 	Logo   Logo         `toml:"logo"`
 	Csv    Csv          `toml:"csv"`
+	Game   ConfigGame   `toml:"game"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -111,6 +116,8 @@ func LoadTournament(file string) (ConfigTournament, error) {
 		return ConfigTournament{}, errors.New("stream: field passcode is empty")
 	case l.Rules.Waiting > 30 || l.Rules.Waiting <= 0:
 		return ConfigTournament{}, errors.New("waiting time: isn't correct")
+	case len(l.Game.Name) == 0:
+		return ConfigTournament{}, errors.New("game: name is empty")
 	case len(l.Csv.NameFile) == 0:
 		log.Println(errors.New("csv: nameFile field is empty").Error())
 		return l, nil

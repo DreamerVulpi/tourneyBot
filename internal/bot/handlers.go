@@ -22,6 +22,7 @@ type commandHandler struct {
 	appID                string
 	logo                 string
 	logoTournament       string
+	nameGame             string
 	stop                 chan struct{}
 	m                    *discordgo.MessageCreate
 	client               *startgg.Client

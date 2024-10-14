@@ -124,6 +124,7 @@ func Start(cfg config.Config, t config.ConfigTournament) error {
 		appID:           cfg.Discord.AppID,
 		rolesIdList:     cfg.Roles,
 		discordContacts: loadCSV(t.Csv.NameFile),
+		nameGame:        t.Game.Name,
 	}
 
 	commandHandlers["check"] = cmdHandler.viewData

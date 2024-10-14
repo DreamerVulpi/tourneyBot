@@ -62,10 +62,15 @@ type Participants struct {
 
 type ConnectedAccounts struct {
 	Tekken Tekken8 `json:"tekken"`
+	SF6    SF6     `json:"capcom"`
 }
 
 type Tekken8 struct {
 	TekkenID string `json:"value"`
+}
+
+type SF6 struct {
+	GameID string `json:"value"`
 }
 
 type User struct {
