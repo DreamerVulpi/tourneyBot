@@ -37,6 +37,17 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 				discordgo.Russian: "Получить список контактов игроков из csv файла",
 			},
 			DMPermission: &dmPermission,
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "get",
+					Description: "Nickname player or Any",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Никнейм или Все",
+					},
+				},
+			},
 		},
 		{
 			Name:        "set-event",
@@ -77,6 +88,44 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			},
 			DescriptionLocalizations: &map[discordgo.Locale]string{
 				discordgo.Russian: "Остановить рассылку инвайт-сообщений участникам турнира",
+			},
+			DMPermission: &dmPermission,
+		},
+		{
+			Name:        "roles",
+			Description: "Issue/delete appropriate roles to tournament participants (requires a csv file)",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "mode",
+					Description: "Work mode",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Режим работы",
+					},
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name: "Give",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "Выдать",
+							},
+							Value: "give",
+						},
+						{
+							Name: "Remove",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "Убрать",
+							},
+							Value: "rmv",
+						},
+					},
+				},
+			},
+			NameLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "роли",
+			},
+			DescriptionLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "Выдача/Удаление соответствующих ролей участникам турнира (требуется csv-файл)",
 			},
 			DMPermission: &dmPermission,
 		},

@@ -57,8 +57,9 @@ var Ru = Lang{
 		NoData:  "Нет данных",
 	},
 	ResponseMessage: ResponseMessage{
-		Starting: "Начинаю рассылать...",
-		Stopping: "Останавливаю...",
-		Stopped:  "Остановлено.",
+		Starting:  "Начинаю рассылать...",
+		InProcess: "Обработка...",
+		Stopping:  "Останавливаю...",
+		Stopped:   "Остановлено.",
 	},
 }

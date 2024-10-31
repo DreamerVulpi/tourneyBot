@@ -57,8 +57,9 @@ var En = Lang{
 		NoData:  "N/D",
 	},
 	ResponseMessage: ResponseMessage{
-		Starting: "Starting sending...",
-		Stopping: "Stopping...",
-		Stopped:  "Stopped.",
+		Starting:  "Starting sending...",
+		InProcess: "In process...",
+		Stopping:  "Stopping...",
+		Stopped:   "Stopped.",
 	},
 }

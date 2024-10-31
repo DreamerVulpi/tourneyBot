@@ -60,9 +60,10 @@ type ErrorMessage struct {
 }
 
 type ResponseMessage struct {
-	Starting string
-	Stopping string
-	Stopped  string
+	Starting  string
+	InProcess string
+	Stopping  string
+	Stopped   string
 }
 
 type Lang struct {

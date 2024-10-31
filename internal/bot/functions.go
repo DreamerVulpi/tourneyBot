@@ -52,64 +52,62 @@ func (c *commandHandler) searchContactDiscord(s *discordgo.Session, nickname str
 		}
 	}
 	return discordUser{
-		// discordID: (*member[0]).User.ID,
 		discordID: strings.SplitN((*member[0]).User.ID, "#", -1)[0],
 		locales:   roles,
 	}, nil
 }
 
-func (c *commandHandler) checkContact(object []startgg.Participants) contactData {
+func (c *commandHandler) checkContact(participants []startgg.Participants) contactData {
 	var discord string
-	if object == nil {
+	if participants == nil {
 		discord = "N/D"
 	} else {
-		if object[0].User.Authorizations == nil {
-			value, ok := c.discordContacts[object[0].GamerTag]
+		if participants[0].User.Authorizations == nil {
+			value, ok := c.discordContacts[participants[0].GamerTag]
 			if ok {
-				discord = value.discord
+				discord = value.DiscordLogin
 			} else {
 				discord = "N/D"
 			}
 		} else {
-			discord = object[0].User.Authorizations[0].Discord
+			discord = participants[0].User.Authorizations[0].Discord
 		}
 	}
 
-	var tekkenID string
-	if object == nil {
-		tekkenID = "N/D"
+	var gameID string
+	if participants == nil {
+		gameID = "N/D"
 	} else {
-		if object[0].ConnectedAccounts.Tekken.TekkenID == "" {
-			value, ok := c.discordContacts[object[0].GamerTag]
-			if ok {
-				tekkenID = value.gameID
+		if c.nameGame == "tekken" {
+			if participants[0].ConnectedAccounts.Tekken.TekkenID == "" {
+				value, ok := c.discordContacts[participants[0].GamerTag]
+				if ok {
+					gameID = value.GameID
+				} else {
+					gameID = "N/D"
+				}
 			} else {
-				tekkenID = "N/D"
+				gameID = participants[0].ConnectedAccounts.Tekken.TekkenID
 			}
-		} else {
-			tekkenID = object[0].ConnectedAccounts.Tekken.TekkenID
+		}
+		if c.nameGame == "sf6" {
+			if participants[0].ConnectedAccounts.SF6.GameID == "" {
+				value, ok := c.discordContacts[participants[0].GamerTag]
+				if ok {
+					gameID = value.GameID
+				} else {
+					gameID = "N/D"
+				}
+			} else {
+				gameID = participants[0].ConnectedAccounts.SF6.GameID
+			}
 		}
 	}
 
 	return contactData{
-		discord: discord,
-		gameID:  tekkenID,
+		DiscordLogin: discord,
+		GameID:       gameID,
 	}
-}
-
-func (c *commandHandler) checkGameID(gameIDS startgg.ConnectedAccounts) string {
-	var result string
-
-	if c.nameGame == "tekken" {
-		result = gameIDS.Tekken.TekkenID
-		return result
-	}
-	if c.nameGame == "sf6" {
-		result = gameIDS.SF6.GameID
-		return result
-	}
-
-	return "N/D"
 }
 
 func (c *commandHandler) templateMessage(fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
@@ -213,24 +211,24 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 					if len(set.Slots) != 2 || len(set.Slots) == 0 {
 						continue
 					}
-					// skip slots with empty id
+					// skip slots with empty iD
 					if set.Slots[0].Entrant.Id == 0 || set.Slots[1].Entrant.Id == 0 {
 						continue
 					}
 
 					go func() {
 						// discord contact check
-						contactsPlayer1 := c.checkContact(set.Slots[0].Entrant.Participants)
-						contactsPlayer2 := c.checkContact(set.Slots[1].Entrant.Participants)
+						dataPlayer1 := c.checkContact(set.Slots[0].Entrant.Participants)
+						dataPlayer2 := c.checkContact(set.Slots[1].Entrant.Participants)
 
-						player1, err := c.searchContactDiscord(s, contactsPlayer1.discord)
+						player1, err := c.searchContactDiscord(s, dataPlayer1.DiscordLogin)
 						if err != nil {
-							log.Printf("sending message: Not finded member in discord (%v)", contactsPlayer1.discord)
+							log.Printf("sending message: Not finded member in discord (%v)", dataPlayer1.DiscordLogin)
 						}
 
-						player2, err := c.searchContactDiscord(s, contactsPlayer2.discord)
+						player2, err := c.searchContactDiscord(s, dataPlayer2.DiscordLogin)
 						if err != nil {
-							log.Printf("sending message: Not finded member in discord (%v)", contactsPlayer2.discord)
+							log.Printf("sending message: Not finded member in discord (%v)", dataPlayer2.DiscordLogin)
 						}
 
 						toPlayer1 := PlayerData{
@@ -246,7 +244,7 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 								// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
 								discordID: player2.discordID, // Set player2
 								nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
-								gameID:    c.checkGameID(set.Slots[1].Entrant.Participants[0].ConnectedAccounts),
+								gameID:    dataPlayer2.GameID,
 							},
 						}
 						toPlayer2 := PlayerData{
@@ -262,19 +260,19 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 								// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 								discordID: player1.discordID, // Set player1
 								nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
-								gameID:    c.checkGameID(set.Slots[0].Entrant.Participants[0].ConnectedAccounts),
+								gameID:    dataPlayer1.GameID,
 							},
 						}
 
 						// log.Println(toPlayer1)
 						// log.Println(toPlayer2)
 
-						if contactsPlayer1.discord != "N/D" {
+						if dataPlayer1.DiscordLogin != "N/D" {
 							c.sendMessage(s, toPlayer1)
 							log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
 						}
 
-						if contactsPlayer2.discord != "N/D" {
+						if dataPlayer2.DiscordLogin != "N/D" {
 							c.sendMessage(s, toPlayer2)
 							log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
 						}
@@ -286,4 +284,39 @@ func (c *commandHandler) SendingMessages(s *discordgo.Session) error {
 
 	}
 	return err
+}
+
+func (c *commandHandler) workRoles(s *discordgo.Session, arg string) []*discordgo.MessageEmbed {
+	var embed []*discordgo.MessageEmbed
+	if len(c.discordContacts) != 0 {
+		if arg == "give" {
+			for _, usr := range c.discordContacts {
+				if usr.DiscordID == "N/D" {
+					continue
+				}
+				err := s.GuildMemberRoleAdd(c.guildID, usr.DiscordID, c.tourneyRole.ID)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+		} else {
+			for _, usr := range c.discordContacts {
+				if usr.DiscordID == "N/D" {
+					continue
+				}
+				err := s.GuildMemberRoleRemove(c.guildID, usr.DiscordID, c.tourneyRole.ID)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+		}
+		embed = append(embed, c.messageEmbed("Roles", []*discordgo.MessageEmbedField{
+			{Name: "Success!"},
+		}))
+	} else {
+		embed = append(embed, c.messageEmbed("Roles", []*discordgo.MessageEmbedField{
+			{Name: "Error: Can't work with roles by commands", Value: "CSV file with data isn't loaded. Load file and restart bot."},
+		}))
+	}
+	return embed
 }
