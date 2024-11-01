@@ -71,7 +71,6 @@ func (cmd *commandHandler) messageEmbed(title string, fields []*discordgo.Messag
 	}
 }
 
-// FIXME: change []* to *
 func (cmd *commandHandler) responseEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed []*discordgo.MessageEmbed) error {
 	err := s.InteractionRespond(
 		i.Interaction,
@@ -247,53 +246,54 @@ func (cmd *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo
 func (cmd *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	local := cmd.msgResponse(i.Locale.String())
 
-	// DELETE AFTER FIX RESPONSEEMBED
-	go func() {
-		response(s, i, local.responseMsg.InProcess)
-	}()
-
 	go func() {
 		arg := i.ApplicationCommandData().Options[0].StringValue()
-
+		embeD := []*discordgo.MessageEmbed{}
 		cts, err := os.ReadFile("contactsEmbed.json")
 		if err != nil {
-			embed := []*discordgo.MessageEmbed{}
-			embed = append(embed, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+			embeD = append(embeD, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 				{Name: "", Value: local.errorMsg.NoData},
 			}))
 
-			if err := cmd.responseEmbed(s, i, embed); err != nil {
+			if err := cmd.responseEmbed(s, i, embeD); err != nil {
 				log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 			}
 		} else {
 			json.Unmarshal(cts, &cmd.embedDiscordContacts)
-			if strings.ToLower(arg) == "any" || strings.ToLower(arg) == "все" {
+			switch strings.ToLower(arg) {
+			case "any", "все":
+				response(s, i, local.responseMsg.InProcess)
 				for _, embed := range cmd.embedDiscordContacts {
 					if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embed); err != nil {
 						log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 					}
 				}
-			} else {
+			default:
+				var trigger bool
 				for _, embed := range cmd.embedDiscordContacts {
 					for _, field := range embed.Fields {
 						if strings.ToLower(arg) == strings.ToLower(field.Name) {
+							trigger = true
 							var fields []*discordgo.MessageEmbedField
 							fields = append(fields, &discordgo.MessageEmbedField{
 								Name:  field.Name,
 								Value: field.Value,
 							})
-							// FIXME: Working but app isn't response
-							if _, err := s.ChannelMessageSendEmbed(i.ChannelID, &discordgo.MessageEmbed{
-								Timestamp: embed.Timestamp,
-								Footer:    embed.Footer,
-								Thumbnail: embed.Thumbnail,
-								Author:    embed.Author,
-								Fields:    fields,
-							}); err != nil {
+							embeD = append(embeD, cmd.messageEmbed(local.vdMsg.Title, fields))
+							if err := cmd.responseEmbed(s, i, embeD); err != nil {
 								log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 							}
 							break
 						}
+					}
+				}
+				if !trigger {
+					embeD = append(embeD, cmd.messageEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+						{Name: "", Value: local.errorMsg.NoData},
+					}))
+
+					if err := cmd.responseEmbed(s, i, embeD); err != nil {
+						log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Input, err.Error()))
 					}
 				}
 			}
