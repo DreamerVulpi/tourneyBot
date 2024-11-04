@@ -135,9 +135,96 @@ func (ch *commandHandler) commands() []*discordgo.ApplicationCommand {
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
-					Name:        "format",
+					Name:        "standard-format",
 					Description: "First to ? wins",
 					Required:    true,
+					NameLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "обычный-формат",
+					},
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "До ? побед",
+					},
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name: "First to 1 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 1 победы в сете",
+							},
+							Value: 1,
+						},
+						{
+							Name: "First to 2 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 2 побед в сете",
+							},
+							Value: 2,
+						},
+						{
+							Name: "First to 3 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 3 побед в сете",
+							},
+							Value: 3,
+						},
+						{
+							Name: "First to 4 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 4 побед в сете",
+							},
+							Value: 4,
+						},
+						{
+							Name: "First to 5 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 5 побед в сете",
+							},
+							Value: 5,
+						},
+						{
+							Name: "First to 6 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 6 побед в сете",
+							},
+							Value: 6,
+						},
+						{
+							Name: "First to 7 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 7 побед в сете",
+							},
+							Value: 7,
+						},
+						{
+							Name: "First to 8 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 8 побед в сете",
+							},
+							Value: 8,
+						},
+						{
+							Name: "First to 9 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 9 побед в сете",
+							},
+							Value: 9,
+						},
+						{
+							Name: "First to 10 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 10 побед в сете",
+							},
+							Value: 10,
+						},
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "finals-format",
+					Description: "First to ? wins",
+					Required:    true,
+					NameLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "формат-финалов",
+					},
 					DescriptionLocalizations: map[discordgo.Locale]string{
 						discordgo.Russian: "До ? побед",
 					},

@@ -292,11 +292,12 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 		appID:      cfg.Discord.AppID,
 		tournament: tournament,
 		rulesMatches: config.RulesMatches{
-			Format:        tournament.Rules.Format,
-			Rounds:        tournament.Rules.Rounds,
-			Duration:      tournament.Rules.Duration,
-			Crossplatform: tournament.Rules.Crossplatform,
-			Stage:         tournament.Rules.Stage,
+			StandardFormat: tournament.Rules.StandardFormat,
+			FinalsFormat:   tournament.Rules.FinalsFormat,
+			Rounds:         tournament.Rules.Rounds,
+			Duration:       tournament.Rules.Duration,
+			Crossplatform:  tournament.Rules.Crossplatform,
+			Stage:          tournament.Rules.Stage,
 		},
 		streamLobby: config.StreamLobby{
 			Area:          tournament.Stream.Area,
@@ -311,8 +312,10 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 
 	cmdHandler := commandHandler{
 		stopSignal: make(chan struct{}),
-		startgg:    client,
-		cfg:        cfgCmdHadnler,
+		startgg: strtgg{
+			client: client,
+		},
+		cfg: cfgCmdHadnler,
 	}
 
 	commandHandlers["check"] = cmdHandler.viewData

@@ -32,10 +32,12 @@ type PageInfo struct {
 
 // Information about Set
 type Nodes struct {
-	Id     int64    `json:"id"`
-	State  State    `json:"state"`
-	Stream Streamer `json:"stream"`
-	Slots  []Slots  `json:"slots"`
+	Id            int64    `json:"id"`
+	State         State    `json:"state"`
+	FullRoundText string   `json:"fullRoundText"`
+	Round         int      `json:"round"`
+	Stream        Streamer `json:"stream"`
+	Slots         []Slots  `json:"slots"`
 }
 
 type Streamer struct {

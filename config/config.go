@@ -32,12 +32,13 @@ type Config struct {
 }
 
 type RulesMatches struct {
-	Format        int    `toml:"format"`
-	Stage         string `toml:"stage"`
-	Rounds        int    `toml:"rounds"`
-	Duration      int    `toml:"duration"`
-	Crossplatform bool   `toml:"crossplatform"`
-	Waiting       int    `toml:"waiting"`
+	StandardFormat int    `toml:"standardFormat"`
+	FinalsFormat   int    `toml:"finalsFormat"`
+	Stage          string `toml:"stage"`
+	Rounds         int    `toml:"rounds"`
+	Duration       int    `toml:"duration"`
+	Crossplatform  bool   `toml:"crossplatform"`
+	Waiting        int    `toml:"waiting"`
 }
 
 type StreamLobby struct {
@@ -98,8 +99,10 @@ func LoadTournament(file string) (ConfigTournament, error) {
 	}
 
 	switch {
-	case l.Rules.Format == 0:
-		return ConfigTournament{}, errors.New("local: field format is null")
+	case l.Rules.StandardFormat == 0:
+		return ConfigTournament{}, errors.New("local: field standardFormat is null")
+	case l.Rules.FinalsFormat == 0:
+		return ConfigTournament{}, errors.New("local: field finalsFormat is null")
 	case l.Rules.Rounds == 0:
 		return ConfigTournament{}, errors.New("local: field rounds is empty")
 	case len(l.Rules.Stage) == 0:

@@ -10,7 +10,8 @@ type InviteMessage struct {
 	CheckIn                  string
 	Warning                  string
 	SettingsHeader           string
-	Format                   string
+	StandardFormat           string
+	FinalsFormat             string
 	FormatDescription        string
 	FT                       string
 	Stage                    string

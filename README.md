@@ -15,12 +15,12 @@ If you want to help the project, suggest ideas and developments in your [pull re
 <br>
 
 ## To be realized in the future
-* Different battle formats for different stages of the tournament;
 * Dynamically changing time interval until disqualification from the tournament with each repeated message
 
 ## Features
 
 * Tekken 8 and Street Fighter 6 support;
+* Different battle formats for different stages of the tournament;
 * Single and double elimination tournament formats are supported;
 * Sending messages to all tournament participants every 5 minutes;
 * Bot control and configuration of templates and variables via commands;
@@ -79,7 +79,8 @@ If you want to help the project, suggest ideas and developments in your [pull re
 
     [rules]
     stage = "any"           # Name stage or any (check names in stages.go)
-    format = 2              # FT (first N to win): 1-10
+    standardFormat = 2      # FT (first N to win): 1-10
+    finalsFormat = 3        # FT (first N to win): 1-10
     rounds = 3              # 1-5
     duration = 60           # 30-99
     waiting = 10            # Time before disqualification in minutes: 1-any
@@ -136,12 +137,12 @@ TourneyBot проект для организаторов турнира пла�
 <br>
 
 ## Будет реализовано в будущем
-* Различные форматы сражений для разных этапов турнира;
 * Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
 
 ## Особенности
 
 * Поддержка Теккен 8 и SF6;
+* Различные форматы сражений для разных этапов турнира;
 * Поддержка форматов Single and double elimination;
 * Отправка сообщений всем участникам турнира каждые 5 минут;
 * Контролирование бота и изменение конфигурации шаблонов и переменных при помощи команд;
@@ -200,7 +201,8 @@ TourneyBot проект для организаторов турнира пла�
 
     [rules]
     stage = "any"           # Имя локации или любое (any) (проверить имена в stages.go)
-    format = 2              # FT (до N побед): 1-10
+    standardFormat = 2      # ФТ (до N побед): 1-10
+    finalsFormat = 3        # ФТ (до N побед): 1-10
     rounds = 3              # 1-5
     duration = 60           # 30-99
     waiting = 10            # Время до дисквалификации в минутах: 1-any

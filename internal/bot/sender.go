@@ -17,6 +17,7 @@ type PlayerData struct {
 	setID        int64
 	streamName   string
 	streamSourse string
+	roundNum     int
 	user         discordUser
 	opponent     opponentData
 }
@@ -152,23 +153,43 @@ func (ch *commandHandler) Process(s *discordgo.Session) {
 	}
 }
 
+func (ch *commandHandler) checkPhaseGroup(sets []startgg.Nodes) (int, int) {
+	var min, max, minIndex, maxIndex int
+
+	for index, set := range sets {
+		if min > set.Round {
+			min = set.Round
+			minIndex = index
+		}
+		if max < set.Round {
+			max = set.Round
+			maxIndex = index
+		}
+	}
+
+	if sets[maxIndex].FullRoundText == "Grand Final" && sets[minIndex].FullRoundText == "Losers Final" {
+		return min, max
+	}
+	return 0, 0
+}
+
 func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
-	tournament, err := ch.startgg.GetTournament(strings.Replace(strings.SplitAfter(ch.slug, "/")[1], "/", "", 1))
+	tournament, err := ch.startgg.client.GetTournament(strings.Replace(strings.SplitAfter(ch.slug, "/")[1], "/", "", 1))
 	if err != nil {
 		return err
 	}
 
-	phaseGroups, err := ch.startgg.GetListGroups(ch.slug)
+	phaseGroups, err := ch.startgg.client.GetListGroups(ch.slug)
 	if err != nil {
 		return err
 	}
 
 	for _, phaseGroup := range phaseGroups {
-		state, err := ch.startgg.GetPhaseGroupState(phaseGroup.Id)
+		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroup.Id)
 		if err != nil {
 			return err
 		}
-		total, err := ch.startgg.GetPagesCount(phaseGroup.Id)
+		total, err := ch.startgg.client.GetPagesCount(phaseGroup.Id)
 		if err != nil {
 			return err
 		}
@@ -185,10 +206,14 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 
 		if state == startgg.InProcess {
 			for i := 0; i < pages; i++ {
-				sets, err := ch.startgg.GetSets(phaseGroup.Id, pages, 60)
+				sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
 				if err != nil {
 					log.Println(errors.New("error get sets"))
 				}
+
+				ch.startgg.minRoundNumA, ch.startgg.maxRoundNumB = ch.checkPhaseGroup(sets)
+				ch.startgg.minRoundNumB = ch.startgg.minRoundNumA + 2
+				ch.startgg.maxRoundNumA = ch.startgg.maxRoundNumB - 3
 				for _, set := range sets {
 					// сhecking the presence of a player in the slot
 					if len(set.Slots) != 2 || len(set.Slots) == 0 {
@@ -223,6 +248,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 							user:         player1, // Set player1
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
+							roundNum:     set.Round,
 							opponent: opponentData{
 								// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
 								discordID: player2.discordID, // Set player2
@@ -239,6 +265,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 							user:         player2, // Set player2
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
+							roundNum:     set.Round,
 							opponent: opponentData{
 								// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 								discordID: player1.discordID, // Set player1

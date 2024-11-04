@@ -21,10 +21,18 @@ type discord struct {
 	tourneyRole   *discordgo.Role
 }
 
+type strtgg struct {
+	client       *startgg.Client
+	minRoundNumA int
+	minRoundNumB int
+	maxRoundNumA int
+	maxRoundNumB int
+}
+
 type commandHandler struct {
 	slug       string
 	stopSignal chan struct{}
-	startgg    *startgg.Client
+	startgg    strtgg
 	discord    discord
 	cfg        params
 }
@@ -111,11 +119,12 @@ func (ch *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interactio
 
 func (ch *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	args := i.ApplicationCommandData().Options
-	ch.cfg.rulesMatches.Format = int(args[0].IntValue())
-	ch.cfg.rulesMatches.Stage = args[1].StringValue()
-	ch.cfg.rulesMatches.Rounds = int(args[2].IntValue())
-	ch.cfg.rulesMatches.Duration = int(args[3].IntValue())
-	ch.cfg.rulesMatches.Crossplatform = args[4].BoolValue()
+	ch.cfg.rulesMatches.StandardFormat = int(args[0].IntValue())
+	ch.cfg.rulesMatches.FinalsFormat = int(args[1].IntValue())
+	ch.cfg.rulesMatches.Stage = args[2].StringValue()
+	ch.cfg.rulesMatches.Rounds = int(args[3].IntValue())
+	ch.cfg.rulesMatches.Duration = int(args[4].IntValue())
+	ch.cfg.rulesMatches.Crossplatform = args[5].BoolValue()
 
 	embed := []*discordgo.MessageEmbed{}
 	embed = append(embed, ch.msgRuleMatches(i.Locale.String()))

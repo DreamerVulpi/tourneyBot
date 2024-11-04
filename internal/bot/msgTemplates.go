@@ -47,6 +47,12 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		if len(discordId) == 0 {
 			discordId = local.ErrorMessage.NoData
 		}
+		format := ch.cfg.rulesMatches.StandardFormat
+		if ch.startgg.minRoundNumA != 0 && ch.startgg.maxRoundNumB != 0 {
+			if ch.startgg.minRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.minRoundNumB || ch.startgg.maxRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.maxRoundNumB {
+				format = ch.cfg.rulesMatches.FinalsFormat
+			}
+		}
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.InviteMessage.MessageHeader},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
@@ -57,7 +63,7 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 			{Name: fmt.Sprintf(local.InviteMessage.Warning, ch.cfg.rulesMatches.Waiting), Value: ""},
 
 			{Name: local.InviteMessage.SettingsHeader},
-			{Name: local.InviteMessage.Format, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.Format) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.Format), Inline: true},
+			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
 			{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
 			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
@@ -149,7 +155,8 @@ func (ch *commandHandler) msgRuleMatches(language string) *discordgo.MessageEmbe
 
 	fields := []*discordgo.MessageEmbedField{
 		{Name: local.ViewDataMessage.MessageRulesHeader},
-		{Name: local.InviteMessage.Format, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.Format) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.Format), Inline: true},
+		{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat), Inline: true},
+		{Name: local.InviteMessage.FinalsFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat), Inline: true},
 		{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
 		{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
@@ -238,7 +245,8 @@ func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 		{Value: fmt.Sprintf("```%v```", slug)},
 
 		{Name: local.ViewDataMessage.MessageRulesHeader},
-		{Name: local.InviteMessage.Format, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.Format) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.Format), Inline: true},
+		{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat), Inline: true},
+		{Name: local.InviteMessage.FinalsFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat), Inline: true},
 		{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
 		{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
