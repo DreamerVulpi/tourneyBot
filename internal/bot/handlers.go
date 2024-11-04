@@ -22,11 +22,12 @@ type discord struct {
 }
 
 type strtgg struct {
-	client       *startgg.Client
-	minRoundNumA int
-	minRoundNumB int
-	maxRoundNumA int
-	maxRoundNumB int
+	client         *startgg.Client
+	finalBracketId int64
+	minRoundNumA   int
+	minRoundNumB   int
+	maxRoundNumA   int
+	maxRoundNumB   int
 }
 
 type commandHandler struct {

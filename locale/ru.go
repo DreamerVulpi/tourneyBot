@@ -11,7 +11,7 @@ var Ru = Lang{
 		CheckIn:                  "**Ссылка на check-in**",
 		Warning:                  "У вас есть %v мин. чтобы отметиться до автоматической дисквалификации",
 		SettingsHeader:           "**Настройки согласно правилам**",
-		StandardFormat:           "**Обычный формат**",
+		StandardFormat:           "**Формат**",
 		FinalsFormat:             "**Формат финалов**",
 		FormatDescription:        "** (До %v побед)**",
 		FT:                       "ФТ%v",

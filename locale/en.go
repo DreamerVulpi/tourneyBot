@@ -11,7 +11,7 @@ var En = Lang{
 		CheckIn:                  "**Link to check-in**",
 		Warning:                  "You have %v min. to check-in before you are automatically disqualified.",
 		SettingsHeader:           "Settings according to the rules",
-		StandardFormat:           "**Standard format**",
+		StandardFormat:           "**Format**",
 		FinalsFormat:             "**Finals format**",
 		FormatDescription:        "** (First to %v win)**",
 		FT:                       "FT%v",

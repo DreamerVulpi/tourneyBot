@@ -22,7 +22,56 @@ type responseLocale struct {
 	conn           string
 }
 
+func (ch *commandHandler) typeLocale(language string) locale.Lang {
+	var local locale.Lang
+	switch language {
+	case "Russian":
+		local = locale.Ru
+	default:
+		local = locale.En
+	}
+	return local
+}
+
+func (ch *commandHandler) fieldCrossplay(local locale.Lang) string {
+	crossplay := local.InviteMessage.CrossplatformStatusTrue
+	if !ch.cfg.rulesMatches.Crossplatform {
+		crossplay = local.InviteMessage.CrossplatformStatusFalse
+	}
+	return crossplay
+}
+
+func (ch *commandHandler) fieldStage(local locale.Lang) string {
+	stage := local.InviteMessage.AnyStage
+	if ch.cfg.rulesMatches.Stage != "any" {
+		stage = ch.cfg.rulesMatches.Stage
+	}
+	return stage
+}
+func (ch *commandHandler) fieldLanguage(local locale.Lang) string {
+	lang := local.StreamLobbyMessage.AnyLanguage
+	if ch.cfg.streamLobby.Language != "any" {
+		lang = local.StreamLobbyMessage.SameLanguage
+	}
+	return lang
+}
+func (ch *commandHandler) fieldArea(local locale.Lang) string {
+	area := local.StreamLobbyMessage.AnyArea
+	if ch.cfg.streamLobby.Area != "any" {
+		area = local.StreamLobbyMessage.CloseArea
+	}
+	return area
+}
+func (ch *commandHandler) fieldConnection(local locale.Lang) string {
+	conn := local.StreamLobbyMessage.AnyConnection
+	if ch.cfg.streamLobby.Conn != "any" {
+		conn = ch.cfg.streamLobby.Conn
+	}
+	return conn
+}
+
 func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string, roleId string) {
+	var message *discordgo.MessageEmbed
 	var local locale.Lang
 	if roleId == ch.cfg.rolesIdList.Ru {
 		local = locale.Ru
@@ -30,15 +79,14 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		local = locale.En
 	}
 
+	var format int = ch.cfg.rulesMatches.StandardFormat
+	if ch.startgg.finalBracketId == player.phaseGroupId {
+		if ch.startgg.minRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.minRoundNumB || ch.startgg.maxRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.maxRoundNumB {
+			format = ch.cfg.rulesMatches.FinalsFormat
+		}
+	}
+
 	if len(player.streamSourse) == 0 {
-		crossplay := local.InviteMessage.CrossplatformStatusTrue
-		if !ch.cfg.rulesMatches.Crossplatform {
-			crossplay = local.InviteMessage.CrossplatformStatusFalse
-		}
-		stage := local.InviteMessage.AnyStage
-		if ch.cfg.rulesMatches.Stage != "any" {
-			stage = ch.cfg.rulesMatches.Stage
-		}
 		gameID := player.opponent.gameID
 		if len(gameID) == 0 {
 			gameID = local.ErrorMessage.NoData
@@ -47,12 +95,7 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		if len(discordId) == 0 {
 			discordId = local.ErrorMessage.NoData
 		}
-		format := ch.cfg.rulesMatches.StandardFormat
-		if ch.startgg.minRoundNumA != 0 && ch.startgg.maxRoundNumB != 0 {
-			if ch.startgg.minRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.minRoundNumB || ch.startgg.maxRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.maxRoundNumB {
-				format = ch.cfg.rulesMatches.FinalsFormat
-			}
-		}
+
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.InviteMessage.MessageHeader},
 			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
@@ -64,42 +107,14 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 
 			{Name: local.InviteMessage.SettingsHeader},
 			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
-			{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
+			{Name: local.InviteMessage.Stage, Value: ch.fieldStage(local), Inline: true},
 			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
-			{Name: local.InviteMessage.Crossplatform, Value: crossplay, Inline: true},
+			{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 		}
-		message := ch.msgEmbed(fmt.Sprintf(local.InviteMessage.Title, player.tournament), fields)
+		message = ch.msgEmbed(fmt.Sprintf(local.InviteMessage.Title, player.tournament), fields)
 		message.Description = local.InviteMessage.Description
-		_, err := s.ChannelMessageSendEmbed(channel.ID, message)
-		if err != nil {
-			log.Println("error sending DM message:", err)
-			if _, err := s.ChannelMessageSend(
-				ch.discord.msgCreate.ChannelID,
-				"Failed to send you a DM. "+
-					"Did you disable DM in your privacy settings?",
-			); err != nil {
-				log.Println(err.Error())
-			}
-		}
 	} else {
-		lang := local.StreamLobbyMessage.AnyLanguage
-		if ch.cfg.streamLobby.Language != "any" {
-			lang = local.StreamLobbyMessage.SameLanguage
-		}
-		area := local.StreamLobbyMessage.AnyArea
-		if ch.cfg.streamLobby.Area != "any" {
-			area = local.StreamLobbyMessage.CloseArea
-		}
-		crossplay := local.StreamLobbyMessage.CrossplatformStatusTrue
-		if !ch.cfg.rulesMatches.Crossplatform {
-			crossplay = local.StreamLobbyMessage.CrossplatformStatusFalse
-		}
-		conn := local.StreamLobbyMessage.AnyConnection
-		if ch.cfg.streamLobby.Conn != "any" {
-			conn = ch.cfg.streamLobby.Conn
-		}
-
 		var stream string
 		if player.streamSourse == "TWITCH" {
 			stream = "https://www.twitch.tv/" + player.streamName
@@ -113,92 +128,54 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, ch.cfg.rulesMatches.Waiting)},
 
 			{Name: local.StreamLobbyMessage.ParamsHeader},
-			{Name: local.StreamLobbyMessage.Area, Value: area, Inline: true},
-			{Name: local.StreamLobbyMessage.Language, Value: lang, Inline: true},
-			{Name: local.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},
-			{Name: local.StreamLobbyMessage.Crossplatform, Value: crossplay, Inline: true},
+			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
+			{Name: local.StreamLobbyMessage.Area, Value: ch.fieldArea(local), Inline: true},
+			{Name: local.StreamLobbyMessage.Language, Value: ch.fieldLanguage(local), Inline: true},
+			{Name: local.StreamLobbyMessage.TypeConnection, Value: ch.fieldConnection(local), Inline: true},
+			{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 			{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
 		}
-		message := ch.msgEmbed(fmt.Sprintf(local.StreamLobbyMessage.Title, player.tournament), fields)
+		message = ch.msgEmbed(fmt.Sprintf(local.StreamLobbyMessage.Title, player.tournament), fields)
 		message.Description = local.StreamLobbyMessage.Description
-		_, err := s.ChannelMessageSendEmbed(channel.ID, message)
-		if err != nil {
-			log.Println("error sending DM message:", err)
-			if _, err := s.ChannelMessageSend(
-				ch.discord.msgCreate.ChannelID,
-				"Failed to send you a DM. "+
-					"Did you disable DM in your privacy settings?",
-			); err != nil {
-				log.Println(err.Error())
-			}
+	}
+	_, err := s.ChannelMessageSendEmbed(channel.ID, message)
+	if err != nil {
+		log.Println("error sending DM message:", err)
+		if _, err := s.ChannelMessageSend(
+			ch.discord.msgCreate.ChannelID,
+			"Failed to send you a DM. "+
+				"Did you disable DM in your privacy settings?",
+		); err != nil {
+			log.Println(err.Error())
 		}
 	}
 }
 
 func (ch *commandHandler) msgRuleMatches(language string) *discordgo.MessageEmbed {
-	var local locale.Lang
-	switch language {
-	case "Russian":
-		local = locale.Ru
-	default:
-		local = locale.En
-	}
-
-	crossplay := local.InviteMessage.CrossplatformStatusTrue
-	if !ch.cfg.rulesMatches.Crossplatform {
-		crossplay = local.InviteMessage.CrossplatformStatusFalse
-	}
-	stage := local.InviteMessage.AnyStage
-	if ch.cfg.rulesMatches.Stage != "any" {
-		stage = ch.cfg.rulesMatches.Stage
-	}
+	local := ch.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
 		{Name: local.ViewDataMessage.MessageRulesHeader},
 		{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat), Inline: true},
 		{Name: local.InviteMessage.FinalsFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat), Inline: true},
-		{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
+		{Name: local.InviteMessage.Stage, Value: ch.fieldStage(local), Inline: true},
 		{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
-		{Name: local.InviteMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 	}
 	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
 	return message
-
 }
 
 func (ch *commandHandler) msgStreamLobby(language string) *discordgo.MessageEmbed {
-	var local locale.Lang
-	switch language {
-	case "Russian":
-		local = locale.Ru
-	default:
-		local = locale.En
-	}
-
-	lang := local.StreamLobbyMessage.AnyLanguage
-	if ch.cfg.streamLobby.Language != "any" {
-		lang = local.StreamLobbyMessage.SameLanguage
-	}
-	area := local.StreamLobbyMessage.AnyArea
-	if ch.cfg.streamLobby.Area != "any" {
-		area = local.StreamLobbyMessage.CloseArea
-	}
-	conn := local.StreamLobbyMessage.AnyConnection
-	if ch.cfg.streamLobby.Conn != "any" {
-		conn = ch.cfg.streamLobby.Conn
-	}
-	crossplay := local.InviteMessage.CrossplatformStatusTrue
-	if !ch.cfg.rulesMatches.Crossplatform {
-		crossplay = local.InviteMessage.CrossplatformStatusFalse
-	}
+	local := ch.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
 		{Name: local.ViewDataMessage.MessageStreamHeader},
-		{Name: local.StreamLobbyMessage.Area, Value: area, Inline: true},
-		{Name: local.StreamLobbyMessage.Language, Value: lang, Inline: true},
-		{Name: local.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},
-		{Name: local.StreamLobbyMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: local.StreamLobbyMessage.Area, Value: ch.fieldArea(local), Inline: true},
+		{Name: local.StreamLobbyMessage.Language, Value: ch.fieldLanguage(local), Inline: true},
+		{Name: local.StreamLobbyMessage.TypeConnection, Value: ch.fieldConnection(local), Inline: true},
+		{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 		{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
 	}
 	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
@@ -206,34 +183,7 @@ func (ch *commandHandler) msgStreamLobby(language string) *discordgo.MessageEmbe
 }
 
 func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
-	var local locale.Lang
-	switch language {
-	case "Russian":
-		local = locale.Ru
-	default:
-		local = locale.En
-	}
-
-	crossplay := local.InviteMessage.CrossplatformStatusTrue
-	if !ch.cfg.rulesMatches.Crossplatform {
-		crossplay = local.InviteMessage.CrossplatformStatusFalse
-	}
-	stage := local.InviteMessage.AnyStage
-	if ch.cfg.rulesMatches.Stage != "any" {
-		stage = ch.cfg.rulesMatches.Stage
-	}
-	lang := local.StreamLobbyMessage.AnyLanguage
-	if ch.cfg.streamLobby.Language != "any" {
-		lang = local.StreamLobbyMessage.SameLanguage
-	}
-	area := local.StreamLobbyMessage.AnyArea
-	if ch.cfg.streamLobby.Area != "any" {
-		area = local.StreamLobbyMessage.CloseArea
-	}
-	conn := local.StreamLobbyMessage.AnyConnection
-	if ch.cfg.streamLobby.Conn != "any" {
-		conn = ch.cfg.streamLobby.Conn
-	}
+	local := ch.typeLocale(language)
 
 	slug := ch.slug
 	if len(slug) == 0 {
@@ -247,16 +197,16 @@ func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 		{Name: local.ViewDataMessage.MessageRulesHeader},
 		{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat), Inline: true},
 		{Name: local.InviteMessage.FinalsFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat), Inline: true},
-		{Name: local.InviteMessage.Stage, Value: stage, Inline: true},
+		{Name: local.InviteMessage.Stage, Value: ch.fieldStage(local), Inline: true},
 		{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
 		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
-		{Name: local.InviteMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 
 		{Name: local.ViewDataMessage.MessageStreamHeader},
-		{Name: local.StreamLobbyMessage.Area, Value: area, Inline: true},
-		{Name: local.StreamLobbyMessage.Language, Value: lang, Inline: true},
-		{Name: local.StreamLobbyMessage.TypeConnection, Value: conn, Inline: true},
-		{Name: local.StreamLobbyMessage.Crossplatform, Value: crossplay, Inline: true},
+		{Name: local.StreamLobbyMessage.Area, Value: ch.fieldArea(local), Inline: true},
+		{Name: local.StreamLobbyMessage.Language, Value: ch.fieldLanguage(local), Inline: true},
+		{Name: local.StreamLobbyMessage.TypeConnection, Value: ch.fieldConnection(local), Inline: true},
+		{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 		{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
 	}
 	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
@@ -264,13 +214,7 @@ func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 }
 
 func (ch *commandHandler) msgResponse(language string) responseLocale {
-	var local locale.Lang
-	switch language {
-	case "Russian":
-		local = locale.Ru
-	default:
-		local = locale.En
-	}
+	local := ch.typeLocale(language)
 
 	var result responseLocale
 	result.errorMsg = local.ErrorMessage
@@ -289,24 +233,9 @@ func (ch *commandHandler) msgResponse(language string) responseLocale {
 		streamCrossplatform = local.StreamLobbyMessage.CrossplatformStatusFalse
 	}
 
-	area := local.StreamLobbyMessage.AnyArea
-	if ch.cfg.streamLobby.Area != "any" {
-		area = local.StreamLobbyMessage.CloseArea
-	}
-
-	conn := local.StreamLobbyMessage.AnyConnection
-	if ch.cfg.streamLobby.Conn != "any" {
-		conn = ch.cfg.streamLobby.Conn
-	}
-
-	lang := local.StreamLobbyMessage.AnyLanguage
-	if ch.cfg.streamLobby.Language != "any" {
-		lang = local.StreamLobbyMessage.SameLanguage
-	}
-
-	result.area = area
-	result.conn = conn
-	result.lang = lang
+	result.area = ch.fieldArea(local)
+	result.conn = ch.fieldConnection(local)
+	result.lang = ch.fieldLanguage(local)
 	result.crossplayLobby = streamCrossplatform
 	result.crossplayRules = rulesCrossplatform
 

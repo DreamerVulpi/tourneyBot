@@ -298,6 +298,7 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 			Duration:       tournament.Rules.Duration,
 			Crossplatform:  tournament.Rules.Crossplatform,
 			Stage:          tournament.Rules.Stage,
+			Waiting:        tournament.Rules.Waiting,
 		},
 		streamLobby: config.StreamLobby{
 			Area:          tournament.Stream.Area,

@@ -18,6 +18,7 @@ type PlayerData struct {
 	streamName   string
 	streamSourse string
 	roundNum     int
+	phaseGroupId int64
 	user         discordUser
 	opponent     opponentData
 }
@@ -153,7 +154,7 @@ func (ch *commandHandler) Process(s *discordgo.Session) {
 	}
 }
 
-func (ch *commandHandler) checkPhaseGroup(sets []startgg.Nodes) (int, int) {
+func (ch *commandHandler) checkPhaseGroup(phaseGroupId int64, sets []startgg.Nodes) error {
 	var min, max, minIndex, maxIndex int
 
 	for index, set := range sets {
@@ -168,9 +169,16 @@ func (ch *commandHandler) checkPhaseGroup(sets []startgg.Nodes) (int, int) {
 	}
 
 	if sets[maxIndex].FullRoundText == "Grand Final" && sets[minIndex].FullRoundText == "Losers Final" {
-		return min, max
+		log.Printf("Finded final bracket! -> %v , %v\n", min, max)
+		ch.startgg.minRoundNumA = min
+		ch.startgg.maxRoundNumB = max
+		ch.startgg.minRoundNumB = ch.startgg.minRoundNumA + 2
+		ch.startgg.maxRoundNumA = ch.startgg.maxRoundNumB - 3
+		ch.startgg.finalBracketId = phaseGroupId
+		return nil
+	} else {
+		return errors.New("not final bracket")
 	}
-	return 0, 0
 }
 
 func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
@@ -204,6 +212,41 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 			pages = int(math.Round(float64(total / 60)))
 		}
 
+		if state == startgg.IsDone {
+			for i := 0; i < pages; i++ {
+				sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
+				if err != nil {
+					log.Println(errors.New("error get sets"))
+				}
+
+				if err := ch.checkPhaseGroup(phaseGroup.Id, sets); err != nil {
+					log.Println(err.Error())
+				}
+			}
+		}
+	}
+
+	for _, phaseGroup := range phaseGroups {
+		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroup.Id)
+		if err != nil {
+			return err
+		}
+		total, err := ch.startgg.client.GetPagesCount(phaseGroup.Id)
+		if err != nil {
+			return err
+		}
+		if total == 0 {
+			continue
+		}
+
+		var pages int
+		if total <= 60 {
+			pages = 1
+		} else {
+			pages = int(math.Round(float64(total / 60)))
+		}
+
+		// Test: Set state to IsDone
 		if state == startgg.InProcess {
 			for i := 0; i < pages; i++ {
 				sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
@@ -211,9 +254,6 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 					log.Println(errors.New("error get sets"))
 				}
 
-				ch.startgg.minRoundNumA, ch.startgg.maxRoundNumB = ch.checkPhaseGroup(sets)
-				ch.startgg.minRoundNumB = ch.startgg.minRoundNumA + 2
-				ch.startgg.maxRoundNumA = ch.startgg.maxRoundNumB - 3
 				for _, set := range sets {
 					// сhecking the presence of a player in the slot
 					if len(set.Slots) != 2 || len(set.Slots) == 0 {
@@ -239,16 +279,21 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 							log.Printf("sending message: Not finded member in discord (%v)", dataPlayer2.DiscordLogin)
 						}
 
+						// Test
+						// dv, _ := ch.searchContactDiscord(s, "DreamerVulpi")
+
 						toPlayer1 := PlayerData{
 							tournament: tournament.Name,
 							setID:      set.Id,
 							// user: discordUser{
 							// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 							// },
+							// user: dv,
 							user:         player1, // Set player1
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
 							roundNum:     set.Round,
+							phaseGroupId: phaseGroup.Id,
 							opponent: opponentData{
 								// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
 								discordID: player2.discordID, // Set player2
@@ -262,10 +307,12 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 							// user: discordUser{
 							// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 							// },
+							// user: dv,
 							user:         player2, // Set player2
 							streamName:   set.Stream.StreamName,
 							streamSourse: set.Stream.StreamSource,
 							roundNum:     set.Round,
+							phaseGroupId: phaseGroup.Id,
 							opponent: opponentData{
 								// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 								discordID: player1.discordID, // Set player1
