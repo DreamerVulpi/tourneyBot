@@ -17,7 +17,6 @@ If you want to help the project, suggest ideas and developments in your [pull re
 ## To be realized in the future
 * Different battle formats for different stages of the tournament;
 * Dynamically changing time interval until disqualification from the tournament with each repeated message
-* Role assignment on the Discord server;
 
 ## Features
 
@@ -26,6 +25,7 @@ If you want to help the project, suggest ideas and developments in your [pull re
 * Sending messages to all tournament participants every 5 minutes;
 * Bot control and configuration of templates and variables via commands;
 * Loading player data from a ```.csv``` format table;
+* Tourney role assignment on the Discord server;
 * Different invitations are sent depending on the type of match:
 
 | A message with opponent's contacts  | A message with parameters to find a closed Tekken 8 lobby where the game will be played live |
@@ -116,7 +116,7 @@ All commands have a description and the necessary tips for their execution.
 | `/check`  | Check startgg, discord and bot variables |
 | `/start-sending` | Start sending out invitations to tournament participants |
 | `/stop-sending` | Stop sending invitations to tournament participants |
-| `/сontacts` | Get list contact players from csv file |
+| `/сontacts get:<any or nickname>` | Get list contact players or 1 contact from csv file |
 | `/set-event link:<link>` | Set an event in the bot configuration to retrieve all phaseGroups.  The event reference must include the path: `tournament/<tournament_name>/event/<event_name>` |
 | `/edit-rules format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Edit match rules |
 | `/edit-stream-lobby area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Edit stream-lobby configurations |
@@ -138,7 +138,6 @@ TourneyBot проект для организаторов турнира пла�
 ## Будет реализовано в будущем
 * Различные форматы сражений для разных этапов турнира;
 * Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
-* Выдача ролей в Дискорд сервере;
 
 ## Особенности
 
@@ -147,6 +146,7 @@ TourneyBot проект для организаторов турнира пла�
 * Отправка сообщений всем участникам турнира каждые 5 минут;
 * Контролирование бота и изменение конфигурации шаблонов и переменных при помощи команд;
 * Загрузка данных игроков из файла таблицы формата ```.csv```;
+* Выдача турнирной роли в Дискорд сервере;
 * В зависимости от типа матча рассылаются разные приглашения:
 
 | Сообщение с контактами оппонента | Сообщение с параметрами для поиска закрытого лобби Tekken 8 где игра будет на стриме |
@@ -236,7 +236,7 @@ TourneyBot проект для организаторов турнира пла�
 | `/проверка`  | Проверка startgg, discord and bot переменных |
 | `/начать-рассылку` | Начните рассылать приглашения участникам турнира |
 | `/остановить-рассылку` | Прекратите рассылать приглашения участникам турнира |
-| `/контакты` | Получить список контактов игроков из csv файла |
+| `/контакты get:<any or nickname>` | Получить список контактов игроков или 1 контакт из csv файла |
 | `/установить-ивент link:<link>` | Установите событие в конфигурации бота для получения всех phaseGroups. Ссылка на событие должна содержать путь: `tournament/<название_турнира>/event/<название_ивента>` |
 | `/редактировать-правила-матчей format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Редактировать правила матчей |
 | `/редактировать-стрим-лобби area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Редактировать конфигурацию лобби для стрима |
