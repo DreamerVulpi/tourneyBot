@@ -1,31 +1,41 @@
 # TourneyBot
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot) [![Russia](https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/28px-Flag_of_Russia.svg.png)](#русский)
+<p align="center">
+    <a href="https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot"><img src="https://goreportcard.com/badge/github.com/dreamervulpi/tourneybot" alt="Go Report Card"></a>
+    <a href="https://pkg.go.dev/github.com/dreamervulpi/tourneybot"><img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white" alt="go.dev"></a>
+    <a href="https://opensource.org/licenses/mit"><img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="Licenses"></a>
+    <a href="https://new.donatepay.ru/@dreamervulpi"><img src="https://img.shields.io/badge/Donate-DonatePay-green.svg" alt="Donate"></a>
+</p>
+
+[![Russia](https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/28px-Flag_of_Russia.svg.png)](#русский)
 
 ## English
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
-TourneyBot is a project for tournament organizers on the [startgg](https://www.start.gg/) platform for the [Tekken 8](https://www.start.gg/game/tekken-8) game that helps solve the problem of interaction between players and organizers.
+TourneyBot is a project for tournament organizers on the [startgg](https://www.start.gg/) platform for the fighting games that helps solve the problem of interaction between players and organizers.
 
 Using the open API [startgg](https://www.start.gg/) the bot receives data about a tournament in which different groups with different sets and participants participate. Then messages are sent to the participants of the tournament, which are located on the discord server of the organizer.
 
 If you want to help the project, suggest ideas and developments in your [pull requests](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
+If there are donations specified in the brackets of the roadmap innovations, I can make new functionality and expand accessibility.
+
 <br>
 
-## To be realized in the future
-* SF6 support;
-* Different battle formats for different stages of the tournament;
-* Dynamically changing time interval until disqualification from the tournament with each repeated message
-* Role assignment on the Discord server;
+## Roadmap
+* Dynamically changing time interval until disqualification from the tournament with each repeated message (50$);
+* Support for the [challonge](https://challonge.com/ru/dashboard) platform (150$);
 
 ## Features
 
+* Tekken 8 and Street Fighter 6 support;
+* Different battle formats for different stages of the tournament;
 * Single and double elimination tournament formats are supported;
 * Sending messages to all tournament participants every 5 minutes;
 * Bot control and configuration of templates and variables via commands;
 * Loading player data from a ```.csv``` format table;
+* Tourney role assignment on the Discord server;
 * Different invitations are sent depending on the type of match:
 
 | A message with opponent's contacts  | A message with parameters to find a closed Tekken 8 lobby where the game will be played live |
@@ -79,14 +89,22 @@ If you want to help the project, suggest ideas and developments in your [pull re
 
     [rules]
     stage = "any"           # Name stage or any (check names in stages.go)
-    format = 2              # FT (first N to win): 1-10
+    standardFormat = 2      # FT (first N to win): 1-10
+    finalsFormat = 3        # FT (first N to win): 1-10
     rounds = 3              # 1-5
     duration = 60           # 30-99
     waiting = 10            # Time before disqualification in minutes: 1-any
     crossplatform = true    # Enable: true | Disable: false
 
+
     [logo]
     img = "your link to image"
+
+    [game]
+    name = ""               # Game: tekken | sf6
+
+    [csv]
+    nameFile = "your name csv file"
     ```
 
 2. Invite a bot to your discord server;
@@ -109,7 +127,7 @@ All commands have a description and the necessary tips for their execution.
 | `/check`  | Check startgg, discord and bot variables |
 | `/start-sending` | Start sending out invitations to tournament participants |
 | `/stop-sending` | Stop sending invitations to tournament participants |
-| `/сontacts` | Get list contact players from csv file |
+| `/сontacts get:<any or nickname>` | Get list contact players or 1 contact from csv file |
 | `/set-event link:<link>` | Set an event in the bot configuration to retrieve all phaseGroups.  The event reference must include the path: `tournament/<tournament_name>/event/<event_name>` |
 | `/edit-rules format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Edit match rules |
 | `/edit-stream-lobby area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Edit stream-lobby configurations |
@@ -120,26 +138,29 @@ All commands have a description and the necessary tips for their execution.
 
 <img style="padding: 10px" align="right" alt="TourneyBot logo" src="https://i.imgur.com/n9SG5IL.png" width="250">
 
-TourneyBot проект для организаторов турнира платформы [startgg](https://www.start.gg/)  по игре [Tekken 8](https://www.start.gg/game/tekken-8) который помогает решить проблемы взаимодействия между игроками и организаторами.
+TourneyBot проект для организаторов турнира платформы [startgg](https://www.start.gg/) по файтинг играм, который помогает решить проблемы взаимодействия между игроками и организаторами.
 
 Используя открытое API [startgg](https://www.start.gg/) бот получает данные о турнире в котором есть группы, в которых есть сеты, в которых есть участники. После отправляются сообщения участникам турнира, которые находятся на discord сервере организатора.
 
 Если хотите помочь проекту, предлагайте идеи и разработки в ваших [пул реквестах](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
+Если будут донаты указанные в скобках новшеств дорожной карты, то тогда смогу сделать новый функционал и расширить доступность.
+
 <br>
 
-## Будет реализовано в будущем
-* Поддержка игры SF6;
-* Различные форматы сражений для разных этапов турнира;
-* Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
-* Выдача ролей в Дискорд сервере;
+## Дорожная карта
+* Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении (50$);
+* Поддержка платформы [challonge](https://challonge.com/ru/dashboard) (150$);
 
 ## Особенности
 
+* Поддержка Теккен 8 и SF6;
+* Различные форматы сражений для разных этапов турнира;
 * Поддержка форматов Single and double elimination;
 * Отправка сообщений всем участникам турнира каждые 5 минут;
 * Контролирование бота и изменение конфигурации шаблонов и переменных при помощи команд;
 * Загрузка данных игроков из файла таблицы формата ```.csv```;
+* Выдача турнирной роли в Дискорд сервере;
 * В зависимости от типа матча рассылаются разные приглашения:
 
 | Сообщение с контактами оппонента | Сообщение с параметрами для поиска закрытого лобби Tekken 8 где игра будет на стриме |
@@ -193,7 +214,8 @@ TourneyBot проект для организаторов турнира пла�
 
     [rules]
     stage = "any"           # Имя локации или любое (any) (проверить имена в stages.go)
-    format = 2              # FT (до N побед): 1-10
+    standardFormat = 2      # ФТ (до N побед): 1-10
+    finalsFormat = 3        # ФТ (до N побед): 1-10
     rounds = 3              # 1-5
     duration = 60           # 30-99
     waiting = 10            # Время до дисквалификации в минутах: 1-any
@@ -201,6 +223,12 @@ TourneyBot проект для организаторов турнира пла�
 
     [logo]
     img = "ваша ссылка на изображение"
+    
+    [game]
+    name = ""               # Игра: tekken | sf6
+
+    [csv]
+    nameFile = "ваше имя csv файла"
     ```
 
 2. Пригласите бота в ваш дискорд сервер;
@@ -223,7 +251,7 @@ TourneyBot проект для организаторов турнира пла�
 | `/проверка`  | Проверка startgg, discord and bot переменных |
 | `/начать-рассылку` | Начните рассылать приглашения участникам турнира |
 | `/остановить-рассылку` | Прекратите рассылать приглашения участникам турнира |
-| `/контакты` | Получить список контактов игроков из csv файла |
+| `/контакты get:<any or nickname>` | Получить список контактов игроков или 1 контакт из csv файла |
 | `/установить-ивент link:<link>` | Установите событие в конфигурации бота для получения всех phaseGroups. Ссылка на событие должна содержать путь: `tournament/<название_турнира>/event/<название_ивента>` |
 | `/редактировать-правила-матчей format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Редактировать правила матчей |
 | `/редактировать-стрим-лобби area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Редактировать конфигурацию лобби для стрима |

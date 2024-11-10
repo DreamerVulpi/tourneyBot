@@ -5,12 +5,13 @@ type InviteMessage struct {
 	Description              string
 	MessageHeader            string
 	Nickname                 string
-	TekkenID                 string
+	GameID                   string
 	Discord                  string
 	CheckIn                  string
 	Warning                  string
 	SettingsHeader           string
-	Format                   string
+	StandardFormat           string
+	FinalsFormat             string
 	FormatDescription        string
 	FT                       string
 	Stage                    string
@@ -60,9 +61,10 @@ type ErrorMessage struct {
 }
 
 type ResponseMessage struct {
-	Starting string
-	Stopping string
-	Stopped  string
+	Starting  string
+	InProcess string
+	Stopping  string
+	Stopped   string
 }
 
 type Lang struct {

@@ -17,6 +17,10 @@ type ConfigDiscordBot struct {
 	AppID   string `toml:"appID"`
 }
 
+type ConfigGame struct {
+	Name string `toml:"name"`
+}
+
 type ConfigRolesIdDiscord struct {
 	Ru string `toml:"ru"`
 }
@@ -28,12 +32,13 @@ type Config struct {
 }
 
 type RulesMatches struct {
-	Format        int    `toml:"format"`
-	Stage         string `toml:"stage"`
-	Rounds        int    `toml:"rounds"`
-	Duration      int    `toml:"duration"`
-	Crossplatform bool   `toml:"crossplatform"`
-	Waiting       int    `toml:"waiting"`
+	StandardFormat int    `toml:"standardFormat"`
+	FinalsFormat   int    `toml:"finalsFormat"`
+	Stage          string `toml:"stage"`
+	Rounds         int    `toml:"rounds"`
+	Duration       int    `toml:"duration"`
+	Crossplatform  bool   `toml:"crossplatform"`
+	Waiting        int    `toml:"waiting"`
 }
 
 type StreamLobby struct {
@@ -57,6 +62,7 @@ type ConfigTournament struct {
 	Stream StreamLobby  `toml:"stream"`
 	Logo   Logo         `toml:"logo"`
 	Csv    Csv          `toml:"csv"`
+	Game   ConfigGame   `toml:"game"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -93,8 +99,10 @@ func LoadTournament(file string) (ConfigTournament, error) {
 	}
 
 	switch {
-	case l.Rules.Format == 0:
-		return ConfigTournament{}, errors.New("local: field format is null")
+	case l.Rules.StandardFormat == 0:
+		return ConfigTournament{}, errors.New("local: field standardFormat is null")
+	case l.Rules.FinalsFormat == 0:
+		return ConfigTournament{}, errors.New("local: field finalsFormat is null")
 	case l.Rules.Rounds == 0:
 		return ConfigTournament{}, errors.New("local: field rounds is empty")
 	case len(l.Rules.Stage) == 0:
@@ -111,6 +119,8 @@ func LoadTournament(file string) (ConfigTournament, error) {
 		return ConfigTournament{}, errors.New("stream: field passcode is empty")
 	case l.Rules.Waiting > 30 || l.Rules.Waiting <= 0:
 		return ConfigTournament{}, errors.New("waiting time: isn't correct")
+	case len(l.Game.Name) == 0:
+		return ConfigTournament{}, errors.New("game: name is empty")
 	case len(l.Csv.NameFile) == 0:
 		log.Println(errors.New("csv: nameFile field is empty").Error())
 		return l, nil

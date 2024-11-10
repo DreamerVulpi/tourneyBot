@@ -32,10 +32,12 @@ type PageInfo struct {
 
 // Information about Set
 type Nodes struct {
-	Id     int64    `json:"id"`
-	State  State    `json:"state"`
-	Stream Streamer `json:"stream"`
-	Slots  []Slots  `json:"slots"`
+	Id            int64    `json:"id"`
+	State         State    `json:"state"`
+	FullRoundText string   `json:"fullRoundText"`
+	Round         int      `json:"round"`
+	Stream        Streamer `json:"stream"`
+	Slots         []Slots  `json:"slots"`
 }
 
 type Streamer struct {
@@ -62,10 +64,15 @@ type Participants struct {
 
 type ConnectedAccounts struct {
 	Tekken Tekken8 `json:"tekken"`
+	SF6    SF6     `json:"capcom"`
 }
 
 type Tekken8 struct {
 	TekkenID string `json:"value"`
+}
+
+type SF6 struct {
+	GameID string `json:"value"`
 }
 
 type User struct {

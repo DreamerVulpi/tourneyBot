@@ -17,7 +17,9 @@ func main() {
 		if err != nil {
 			log.Println(errors.New("not loaded: ").Error() + err.Error())
 		} else {
-			bot.Start(cfg, tournament)
+			if err := bot.Start(cfg, tournament); err != nil {
+				log.Println(err.Error())
+			}
 		}
 	}
 }

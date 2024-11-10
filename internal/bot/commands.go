@@ -5,8 +5,16 @@ import (
 	"github.com/dreamervulpi/tourneyBot/config"
 )
 
-func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
+func (ch *commandHandler) commands() []*discordgo.ApplicationCommand {
 	dmPermission := false
+	var stages []*discordgo.ApplicationCommandOptionChoice
+	if ch.cfg.tournament.Game.Name == "tekken" {
+		stages = choice(config.T8Stages)
+	}
+	if ch.cfg.tournament.Game.Name == "sf6" {
+		stages = choice(config.SF6Stages)
+	}
+
 	return []*discordgo.ApplicationCommand{
 		{
 			Name:        "check",
@@ -29,6 +37,17 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 				discordgo.Russian: "Получить список контактов игроков из csv файла",
 			},
 			DMPermission: &dmPermission,
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "get",
+					Description: "Nickname player or Any",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Никнейм или Все",
+					},
+				},
+			},
 		},
 		{
 			Name:        "set-event",
@@ -73,14 +92,139 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 			DMPermission: &dmPermission,
 		},
 		{
+			Name:        "roles",
+			Description: "Issue/delete appropriate roles to tournament participants (requires a csv file)",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "mode",
+					Description: "Work mode",
+					Required:    true,
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "Режим работы",
+					},
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name: "Give",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "Выдать",
+							},
+							Value: "give",
+						},
+						{
+							Name: "Remove",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "Убрать",
+							},
+							Value: "rmv",
+						},
+					},
+				},
+			},
+			NameLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "роли",
+			},
+			DescriptionLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "Выдача/Удаление соответствующих ролей участникам турнира (требуется csv-файл)",
+			},
+			DMPermission: &dmPermission,
+		},
+		{
 			Name:        "edit-rules",
 			Description: "Edit match rules",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
-					Name:        "format",
+					Name:        "standard-format",
 					Description: "First to ? wins",
 					Required:    true,
+					NameLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "обычный-формат",
+					},
+					DescriptionLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "До ? побед",
+					},
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name: "First to 1 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 1 победы в сете",
+							},
+							Value: 1,
+						},
+						{
+							Name: "First to 2 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 2 побед в сете",
+							},
+							Value: 2,
+						},
+						{
+							Name: "First to 3 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 3 побед в сете",
+							},
+							Value: 3,
+						},
+						{
+							Name: "First to 4 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 4 побед в сете",
+							},
+							Value: 4,
+						},
+						{
+							Name: "First to 5 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 5 побед в сете",
+							},
+							Value: 5,
+						},
+						{
+							Name: "First to 6 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 6 побед в сете",
+							},
+							Value: 6,
+						},
+						{
+							Name: "First to 7 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 7 побед в сете",
+							},
+							Value: 7,
+						},
+						{
+							Name: "First to 8 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 8 побед в сете",
+							},
+							Value: 8,
+						},
+						{
+							Name: "First to 9 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 9 побед в сете",
+							},
+							Value: 9,
+						},
+						{
+							Name: "First to 10 win in set",
+							NameLocalizations: map[discordgo.Locale]string{
+								discordgo.Russian: "До 10 побед в сете",
+							},
+							Value: 10,
+						},
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "finals-format",
+					Description: "First to ? wins",
+					Required:    true,
+					NameLocalizations: map[discordgo.Locale]string{
+						discordgo.Russian: "формат-финалов",
+					},
 					DescriptionLocalizations: map[discordgo.Locale]string{
 						discordgo.Russian: "До ? побед",
 					},
@@ -165,7 +309,7 @@ func (cmd *commandHandler) commands() []*discordgo.ApplicationCommand {
 					DescriptionLocalizations: map[discordgo.Locale]string{
 						discordgo.Russian: "Название арены | Любая",
 					},
-					Choices: append(choice(config.ListStages), &discordgo.ApplicationCommandOptionChoice{
+					Choices: append(stages, &discordgo.ApplicationCommandOptionChoice{
 						Name: "Any",
 						NameLocalizations: map[discordgo.Locale]string{
 							discordgo.Russian: "Любая",
