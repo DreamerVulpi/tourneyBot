@@ -132,6 +132,7 @@ All commands have a description and the necessary tips for their execution.
 | `/edit-rules format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Edit match rules |
 | `/edit-stream-lobby area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Edit stream-lobby configurations |
 | `/edit-logo-tournament url:<url>` | Edit the link to the tournament logo |
+| `/roles mode:<Give or Remove>` | Issue/delete appropriate roles to tournament participants (requires a csv file) |
 
 
 ## Русский 
@@ -256,3 +257,4 @@ TourneyBot проект для организаторов турнира пла�
 | `/редактировать-правила-матчей format:<[1-10]> stage:<name or any> rounds:<[1-5]> duration:<[30-99]> crossplatformplay:<true or false>` | Редактировать правила матчей |
 | `/редактировать-стрим-лобби area:<any or close> language:<any or same> conn:<any or [3-5]> crossplatformplay:<true or false> passcode:<[0000-9999]>` | Редактировать конфигурацию лобби для стрима |
 | `/редактировать-лого-турнира url:<url>` | Редактировать ссылку на логотип турнира |
+| `/роли mode:<Выдать or Убрать>` | Issue/delete appropriate roles to tournament participants (requires a csv file) |
