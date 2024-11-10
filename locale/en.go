@@ -28,7 +28,7 @@ var En = Lang{
 		Title:                    "Tournament **%v**",
 		Description:              "An invitation to a live broadcast match. You need to go to the lobby below and wait for the organizer's team on the stream for further actions.\n\n*This message was automatically generated. There is no need to reply. If you have any questions or need assistance, please contact one of the organizers' assistants.*",
 		MessageHeader:            "**Link to check-in**",
-		Warning:                  "You have %v min. to check-in before you are automatically disqualified.",
+		Warning:                  "You have %v minutes to register before you will be automatically disqualified (meaning from the very first message received in one stage of the tournament).",
 		ParamsHeader:             "**Params for searching lobby**",
 		Area:                     "**Area**",
 		AnyArea:                  "Any",

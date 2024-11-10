@@ -1,6 +1,13 @@
 # TourneyBot
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot)](https://goreportcard.com/report/github.com/DreamerVulpi/tourneybot) [![Russia](https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/28px-Flag_of_Russia.svg.png)](#русский)
+<p align="center">
+    <a href="https://goreportcard.com/badge/github.com/DreamerVulpi/tourneybot"><img src="https://goreportcard.com/badge/github.com/dreamervulpi/tourneybot" alt="Go Report Card"></a>
+    <a href="https://pkg.go.dev/github.com/dreamervulpi/tourneybot"><img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white" alt="go.dev"></a>
+    <a href="https://opensource.org/licenses/mit"><img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="Licenses"></a>
+    <a href="https://new.donatepay.ru/@dreamervulpi"><img src="https://img.shields.io/badge/Donate-DonatePay-green.svg" alt="Donate"></a>
+</p>
+
+[![Russia](https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/28px-Flag_of_Russia.svg.png)](#русский)
 
 ## English
 
@@ -12,10 +19,13 @@ Using the open API [startgg](https://www.start.gg/) the bot receives data about 
 
 If you want to help the project, suggest ideas and developments in your [pull requests](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
+If there are donations specified in the brackets of the roadmap innovations, I can make new functionality and expand accessibility.
+
 <br>
 
-## To be realized in the future
-* Dynamically changing time interval until disqualification from the tournament with each repeated message
+## Roadmap
+* Dynamically changing time interval until disqualification from the tournament with each repeated message (50$);
+* Support for the [challonge](https://challonge.com/ru/dashboard) platform (150$);
 
 ## Features
 
@@ -134,10 +144,13 @@ TourneyBot проект для организаторов турнира пла�
 
 Если хотите помочь проекту, предлагайте идеи и разработки в ваших [пул реквестах](https://github.com/DreamerVulpi/tourneybot/pulls).  
 
+Если будут донаты указанные в скобках новшеств дорожной карты, то тогда смогу сделать новый функционал и расширить доступность.
+
 <br>
 
-## Будет реализовано в будущем
-* Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении;
+## Дорожная карта
+* Динамически изменяющийся интервал времени до дисквалификации из турнира при каждом повторном сообщении (300$);
+* Поддержка платформы [challonge](https://challonge.com/ru/dashboard) (30$);
 
 ## Особенности
 
