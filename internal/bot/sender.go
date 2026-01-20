@@ -203,12 +203,49 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 		return err
 	}
 
-	for _, phaseGroup := range phaseGroups {
-		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroup.Id)
+	for _, phaseGroupId := range phaseGroups {
+		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroupId.Id)
 		if err != nil {
 			return err
 		}
-		total, err := ch.startgg.client.GetPagesCount(phaseGroup.Id)
+		pagesCount, err := ch.startgg.client.GetPagesCount(phaseGroupId.Id)
+		if err != nil {
+			return err
+		}
+		if pagesCount == 0 {
+			continue
+		}
+
+		var pages int
+		if pagesCount <= 60 {
+			pages = 1
+		} else {
+			pages = int(math.Round(float64(pagesCount / 60)))
+		}
+
+		// Для тестирования IsDone
+		if state == startgg.IsDone {
+			for i := 0; i < pages; i++ {
+				sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, pages, 60)
+				if err != nil {
+					log.Println(errors.New("error get sets"))
+				}
+
+				if err := ch.checkPhaseGroup(phaseGroupId.Id, sets); err != nil {
+					log.Println(err.Error())
+				}
+			}
+		}
+	}
+
+	for _, phaseGroupId := range phaseGroups {
+		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroupId.Id)
+		if err != nil {
+			return err
+		}
+		log.Printf("%v - %v\n", phaseGroupId, state)
+
+		total, err := ch.startgg.client.GetPagesCount(phaseGroupId.Id)
 		if err != nil {
 			return err
 		}
@@ -223,47 +260,10 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 			pages = int(math.Round(float64(total / 60)))
 		}
 
-		// Для тестирования IsDone
-		if state == startgg.IsDone {
-			for i := 0; i < pages; i++ {
-				sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
-				if err != nil {
-					log.Println(errors.New("error get sets"))
-				}
-
-				if err := ch.checkPhaseGroup(phaseGroup.Id, sets); err != nil {
-					log.Println(err.Error())
-				}
-			}
-		}
-	}
-
-	for _, phaseGroup := range phaseGroups {
-		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroup.Id)
-		if err != nil {
-			return err
-		}
-		log.Printf("%v - %v\n", phaseGroup.Id, state)
-
-		total, err := ch.startgg.client.GetPagesCount(phaseGroup.Id)
-		if err != nil {
-			return err
-		}
-		// if total == 0 {
-		// 	continue
-		// }
-
-		var pages int
-		if total <= 60 {
-			pages = 1
-		} else {
-			pages = int(math.Round(float64(total / 60)))
-		}
-
-		log.Printf("%v | %v\n", phaseGroup.Id, total)
+		log.Printf("%v | %v\n", phaseGroupId, total)
 
 		for i := 0; i < pages; i++ {
-			sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
+			sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, pages, 60)
 			if err != nil {
 				log.Println(errors.New("error get sets"))
 			}
@@ -308,7 +308,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 						streamName:   set.Stream.StreamName,
 						streamSourse: set.Stream.StreamSource,
 						roundNum:     set.Round,
-						phaseGroupId: phaseGroup.Id,
+						phaseGroupId: phaseGroupId.Id,
 						opponent: opponentData{
 							// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
 							discordID: player2.discordID, // Set player2
@@ -327,7 +327,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 						streamName:   set.Stream.StreamName,
 						streamSourse: set.Stream.StreamSource,
 						roundNum:     set.Round,
-						phaseGroupId: phaseGroup.Id,
+						phaseGroupId: phaseGroupId.Id,
 						opponent: opponentData{
 							// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 							discordID: player1.discordID, // Set player1
@@ -352,7 +352,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 					}
 				}()
 			}
-			log.Printf("Checked phaseGroup(%v)", phaseGroup.Id)
+			log.Printf("Checked phaseGroup(%v)", phaseGroupId)
 
 		}
 	}

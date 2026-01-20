@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+// State (1 - IsNotStarted, 2 - InProcess, 3 - IsDone)
 type State int
 
 const (
@@ -17,6 +18,7 @@ const (
 	IsDone       State = 3
 )
 
+// State for event (1 - Created, 2 - Active, 3 - Completed)
 type StateEvent string
 
 const (
@@ -44,6 +46,18 @@ func PrepareQuery(query string, variables map[string]interface{}) map[string]int
 	}
 }
 
+func validateData(data []byte) (string, error) {
+	results := &FailedCall{}
+
+	err := json.Unmarshal(data, results)
+	if err != nil {
+		return "", errors.New("unable To Validate Data")
+	}
+
+	return results.Message, nil
+}
+
+// Execute query for get raw data
 func (c *Client) RunQuery(query []byte) ([]byte, error) {
 	// Creates the POST request and checks for errors.
 	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
@@ -78,13 +92,23 @@ func (c *Client) RunQuery(query []byte) ([]byte, error) {
 	return data, nil
 }
 
-func validateData(data []byte) (string, error) {
-	results := &FailedCall{}
-
-	err := json.Unmarshal(data, results)
+// Execute query for get data from startgg according T type
+func GetData[T any](c *Client, rawQuery string, variables map[string]any) (*T, error) {
+	preparedQuery, err := json.Marshal(PrepareQuery(rawQuery, variables))
 	if err != nil {
-		return "", errors.New("unable To Validate Data")
+		return nil, fmt.Errorf("JSON Marshal - %w", err)
 	}
 
-	return results.Message, nil
+	rawData, err := c.RunQuery(preparedQuery)
+	if err != nil {
+		return nil, fmt.Errorf("RunQuery - %w", err)
+	}
+
+	var results T
+	err = json.Unmarshal(rawData, &results)
+	if err != nil {
+		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
+	}
+
+	return &results, nil
 }

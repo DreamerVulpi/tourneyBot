@@ -43,8 +43,47 @@ const (
 			state
 		}
 	}`
-	// Test: Set filter to 3
 	getPhaseGroupSets = `
+	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
+		phaseGroup(id:$phaseGroupId){
+			id
+			sets(
+				page: $page
+				perPage: $perPage
+				sortType: STANDARD
+				filters: {state: 1}
+			){
+			pageInfo{
+				total
+			}
+			nodes{
+					id
+					state
+					stream {
+						streamName
+						streamSource
+					}
+					fullRoundText
+        			round
+					slots{
+						entrant{
+							id
+							participants {
+								gamerTag
+								connectedAccounts
+								user {
+									authorizations(types: DISCORD) {
+										externalUsername
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}`
+	testGetPhaseGroupSets = `
 	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){
 			id

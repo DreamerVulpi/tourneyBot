@@ -1,21 +1,16 @@
 package startgg
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 type RawPhaseGroupData struct {
 	Data   DataPhaseGroup `json:"data"`
 	Errors []Errors       `json:"errors"`
 }
 
 type DataPhaseGroup struct {
-	PhaseGroup PhaseGroup `json:"phaseGroup"`
+	PhaseGroup PhaseGroupSets `json:"phaseGroup"`
 }
 
 // Group(Phase)
-type PhaseGroup struct {
+type PhaseGroupSets struct {
 	Id   int64 `json:"id"`
 	Sets Sets  `json:"sets"`
 }
@@ -56,12 +51,14 @@ type Entrant struct {
 	Participants []Participants `json:"participants"`
 }
 
+// Player data
 type Participants struct {
 	GamerTag          string            `json:"gamerTag"`
 	ConnectedAccounts ConnectedAccounts `json:"connectedAccounts"`
 	User              User              `json:"user"`
 }
 
+// Linked accounts
 type ConnectedAccounts struct {
 	Tekken Tekken8 `json:"tekken"`
 	SF6    SF6     `json:"capcom"`
@@ -75,6 +72,7 @@ type SF6 struct {
 	GameID string `json:"value"`
 }
 
+// User authorizations (Discord and etc.)
 type User struct {
 	Authorizations []Authorizations `json:"authorizations"`
 }
@@ -90,20 +88,10 @@ func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, er
 		"perPage":      perPage,
 	}
 
-	query, err := json.Marshal(PrepareQuery(getPhaseGroupSets, variables))
+	// GetPhaseGroupSets || testGetPhaseGroupSets
+	results, err := GetData[RawPhaseGroupData](c, testGetPhaseGroupSets, variables)
 	if err != nil {
-		return []Nodes{}, fmt.Errorf("JSON Marshal - %w", err)
-	}
-
-	data, err := c.RunQuery(query)
-	if err != nil {
-		return []Nodes{}, err
-	}
-
-	results := &RawPhaseGroupData{}
-	err = json.Unmarshal(data, results)
-	if err != nil {
-		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
+		return nil, err
 	}
 
 	return results.Data.PhaseGroup.Sets.Nodes, nil

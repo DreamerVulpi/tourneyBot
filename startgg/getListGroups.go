@@ -1,10 +1,5 @@
 package startgg
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 type RawPhaseGroupsData struct {
 	Data   DataEvent `json:"data"`
 	Errors []Errors  `json:"errors"`
@@ -15,35 +10,24 @@ type DataEvent struct {
 }
 
 type Event struct {
-	Id          int64      `json:"id"`
-	Name        string     `json:"name"`
-	State       StateEvent `json:"state"`
-	PhaseGroups []PGS      `json:"phaseGroups"`
+	Id          int64          `json:"id"`
+	Name        string         `json:"name"`
+	State       StateEvent     `json:"state"`
+	PhaseGroups []PhaseGroupId `json:"phaseGroups"`
 }
 
-type PGS struct {
+type PhaseGroupId struct {
 	Id int64 `json:"id"`
 }
 
-func (c *Client) GetListGroups(slug string) ([]PGS, error) {
+func (c *Client) GetListGroups(slug string) ([]PhaseGroupId, error) {
 	var variables = map[string]any{
 		"slug": slug,
 	}
 
-	query, err := json.Marshal(PrepareQuery(getListPhaseGroups, variables))
+	results, err := GetData[RawPhaseGroupsData](c, getListPhaseGroups, variables)
 	if err != nil {
-		return []PGS{}, fmt.Errorf("JSON Marshal - %w", err)
-	}
-
-	data, err := c.RunQuery(query)
-	if err != nil {
-		return []PGS{}, err
-	}
-
-	results := &RawPhaseGroupsData{}
-	err = json.Unmarshal(data, results)
-	if err != nil {
-		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
+		return nil, err
 	}
 
 	return results.Data.Event.PhaseGroups, nil
