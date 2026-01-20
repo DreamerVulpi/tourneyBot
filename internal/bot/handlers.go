@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+
 	"os"
 	"regexp"
 	"strings"
+
+	// "time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/startgg"
@@ -186,7 +189,7 @@ func (ch *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.Intera
 		}))
 
 		if err := ch.responseEmbed(s, i, embed); err != nil {
-			log.Println(fmt.Errorf("viewContacts: %v | %v", typeRespond, err.Error()))
+			log.Println(fmt.Errorf("1viewContacts: %v | %v", typeRespond, err.Error()))
 		}
 	}
 
@@ -211,7 +214,7 @@ func (ch *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.Intera
 				}
 				for _, embedContact := range ch.discord.embedContacts {
 					if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embedContact); err != nil {
-						log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+						log.Println(fmt.Errorf("2viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 					}
 				}
 			default:
@@ -227,7 +230,22 @@ func (ch *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.Intera
 							})
 							embed = append(embed, ch.msgEmbed(local.vdMsg.Title, fields))
 							if err := ch.responseEmbed(s, i, embed); err != nil {
-								log.Println(fmt.Errorf("viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
+								for _, element := range embed {
+									log.Println(element.URL)
+									log.Println(element.Type)
+									log.Println(element.Title)
+									log.Println(element.Description)
+									log.Println(element.Timestamp)
+									log.Println(element.Color)
+									log.Println(element.Footer)
+									log.Println(element.Image)
+									log.Println(element.Thumbnail)
+									log.Println(element.Video)
+									log.Println(element.Provider)
+									log.Println(element.Author)
+									log.Println(element.Fields)
+								}
+								log.Println(fmt.Errorf("3viewContacts: %v | %v", local.errorMsg.Respond, err.Error()))
 							}
 							break
 						}

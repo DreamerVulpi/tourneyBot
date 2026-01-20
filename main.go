@@ -19,6 +19,7 @@ func main() {
 		} else {
 			if err := bot.Start(cfg, tournament); err != nil {
 				log.Println(err.Error())
+				// TODO: SAVE LOGS IN TEXT FILE
 			}
 		}
 	}

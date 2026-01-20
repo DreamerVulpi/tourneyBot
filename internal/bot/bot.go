@@ -107,11 +107,15 @@ func (ch *commandHandler) getDiscordContacts(s *discordgo.Session) {
 			if err != nil {
 				log.Printf("viewContacts: %v", err.Error())
 				fields = append(fields, &discordgo.MessageEmbedField{
-					Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID), Inline: false,
+					Name:   fmt.Sprintf("%v", nickname),
+					Value:  fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID),
+					Inline: false,
 				})
 			} else {
 				fields = append(fields, &discordgo.MessageEmbedField{
-					Name: fmt.Sprintf("%v", nickname), Value: fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.discordID, dc.GameID), Inline: false,
+					Name:   fmt.Sprintf("%v", nickname),
+					Value:  fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.discordID, dc.GameID),
+					Inline: false,
 				})
 			}
 			counter++
@@ -270,8 +274,10 @@ func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
 	return nil
 }
 
+// TODO: NEED TESTER MODE AS THIRD COMPONENT
 func Start(cfg config.Config, tournament config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
+	log.Println(cfg.Discord.Token)
 	if err != nil {
 		return err
 	}
@@ -280,8 +286,6 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 	if err != nil {
 		return err
 	}
-
-	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 
 	client := startgg.NewClient(cfg.Startgg.Token, &http.Client{
 		Timeout: time.Second * 10,
@@ -308,7 +312,8 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 			Passcode:      tournament.Stream.Passcode,
 		},
 		rolesIdList: cfg.Roles,
-		logo:        "https://i.imgur.com/n9SG5IL.png",
+		// TODO: Change Link to Logo
+		logo: "https://i.imgur.com/n9SG5IL.png",
 	}
 
 	cmdHandler := commandHandler{
@@ -319,6 +324,7 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 		cfg: cfgCmdHadnler,
 	}
 
+	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 	commandHandlers["check"] = cmdHandler.viewData
 	commandHandlers["start-sending"] = cmdHandler.startSending
 	commandHandlers["stop-sending"] = cmdHandler.stopSending
@@ -334,7 +340,6 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 		log.Println("CSV file isn't loaded. Commands: contacts and roles unavailable. Autofill empty data unavailable.")
 		trigger = true
 	} else {
-
 		err = cmdHandler.createTourneyRole(session)
 		if err != nil {
 			return err

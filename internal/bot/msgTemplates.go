@@ -195,19 +195,41 @@ func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 		{Value: fmt.Sprintf("```%v```", slug)},
 
 		{Name: local.ViewDataMessage.MessageRulesHeader},
-		{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat), Inline: true},
-		{Name: local.InviteMessage.FinalsFormat, Value: fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat), Inline: true},
-		{Name: local.InviteMessage.Stage, Value: ch.fieldStage(local), Inline: true},
-		{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
-		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
-		{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
+		{Name: local.InviteMessage.StandardFormat,
+			Value:  fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.StandardFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.StandardFormat),
+			Inline: true},
+		{Name: local.InviteMessage.FinalsFormat,
+			Value:  fmt.Sprintf(local.InviteMessage.FT, ch.cfg.rulesMatches.FinalsFormat) + fmt.Sprintf(local.InviteMessage.FormatDescription, ch.cfg.rulesMatches.FinalsFormat),
+			Inline: true},
+		{Name: local.InviteMessage.Stage,
+			Value:  ch.fieldStage(local),
+			Inline: true},
+		{Name: local.InviteMessage.Rounds,
+			Value:  fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds),
+			Inline: true},
+		{Name: local.InviteMessage.Duration,
+			Value:  fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration),
+			Inline: true},
+		{Name: local.InviteMessage.Crossplatform,
+			Value:  ch.fieldCrossplay(local),
+			Inline: true},
 
 		{Name: local.ViewDataMessage.MessageStreamHeader},
-		{Name: local.StreamLobbyMessage.Area, Value: ch.fieldArea(local), Inline: true},
-		{Name: local.StreamLobbyMessage.Language, Value: ch.fieldLanguage(local), Inline: true},
-		{Name: local.StreamLobbyMessage.TypeConnection, Value: ch.fieldConnection(local), Inline: true},
-		{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
-		{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
+		{Name: local.StreamLobbyMessage.Area,
+			Value:  ch.fieldArea(local),
+			Inline: true},
+		{Name: local.StreamLobbyMessage.Language,
+			Value:  ch.fieldLanguage(local),
+			Inline: true},
+		{Name: local.StreamLobbyMessage.TypeConnection,
+			Value:  ch.fieldConnection(local),
+			Inline: true},
+		{Name: local.StreamLobbyMessage.Crossplatform,
+			Value:  ch.fieldCrossplay(local),
+			Inline: true},
+		{Name: local.StreamLobbyMessage.Passcode,
+			Value:  fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode),
+			Inline: true},
 	}
 	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
 	return message
@@ -243,21 +265,24 @@ func (ch *commandHandler) msgResponse(language string) responseLocale {
 }
 
 func (ch *commandHandler) msgEmbed(title string, fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
-	return &discordgo.MessageEmbed{
+	embed := &discordgo.MessageEmbed{
 		Title: title,
 		Author: &discordgo.MessageEmbedAuthor{
 			IconURL: ch.cfg.logo,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
-		Fields:    fields,
-		Timestamp: time.Now().Format(time.RFC3339),
+		// FIXME: Issue with none URL types - messages can't send in discord
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: ch.cfg.tournament.Logo.Img,
 		},
+		Fields:    fields,
+		Timestamp: time.Now().Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{
 			Text:    "by DreamerVulpi | https://www.twitch.tv/dreamervulpi",
-			IconURL: "https://i.imgur.com/FcuAfRw.png",
+			IconURL: "https://i.imgur.com/eVmmYEV.png",
 		},
 	}
+
+	return embed
 }

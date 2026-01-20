@@ -3,7 +3,7 @@ module github.com/dreamervulpi/tourneyBot
 go 1.22.1
 
 require (
-	github.com/bwmarrin/discordgo v0.28.1
+	github.com/bwmarrin/discordgo v0.29.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 )
 
