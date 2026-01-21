@@ -260,20 +260,17 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 			pages = int(math.Round(float64(total / 60)))
 		}
 
-		log.Printf("%v | %v\n", phaseGroupId, total)
+		log.Printf("%v | %v | Pages: %v\n", phaseGroupId, total, pages)
 
 		for i := 0; i < pages; i++ {
+			log.Printf("%v | Page #%v\n", phaseGroupId, i)
 			sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, pages, 60)
 			if err != nil {
 				log.Println(errors.New("error get sets"))
 			}
-
+			log.Println("Got sets!")
 			for _, set := range sets {
-				// сhecking the presence of a player in the slot and skip slots with empty iD
-				if len(set.Slots) != 2 || len(set.Slots) == 0 || set.Slots[0].Entrant.Id == 0 || set.Slots[1].Entrant.Id == 0 {
-					continue
-				}
-
+				log.Println("for sets")
 				go func() {
 					// discord contact check
 					dataPlayer1 := ch.checkContact(set.Slots[0].Entrant.Participants)
@@ -356,124 +353,6 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 
 		}
 	}
-	// }
 
-	// for _, phaseGroup := range phaseGroups {
-	// 	state, err := ch.startgg.client.GetPhaseGroupState(phaseGroup.Id)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	total, err := ch.startgg.client.GetPagesCount(phaseGroup.Id)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if total == 0 {
-	// 		continue
-	// 	}
-
-	// 	var pages int
-	// 	if total <= 60 {
-	// 		pages = 1
-	// 	} else {
-	// 		pages = int(math.Round(float64(total / 60)))
-	// 	}
-
-	// 	// Test: Set state to IsDone
-	// 	if state == startgg.IsDone {
-	// 		for i := 0; i < pages; i++ {
-	// 			sets, err := ch.startgg.client.GetSets(phaseGroup.Id, pages, 60)
-	// 			if err != nil {
-	// 				log.Println(errors.New("error get sets"))
-	// 			}
-
-	// 			for _, set := range sets {
-	// 				// сhecking the presence of a player in the slot and skip slots with empty iD
-	// 				if len(set.Slots) != 2 || len(set.Slots) == 0 || set.Slots[0].Entrant.Id == 0 || set.Slots[1].Entrant.Id == 0 {
-	// 					continue
-	// 				}
-
-	// 				go func() {
-	// 					// discord contact check
-	// 					dataPlayer1 := ch.checkContact(set.Slots[0].Entrant.Participants)
-	// 					dataPlayer2 := ch.checkContact(set.Slots[1].Entrant.Participants)
-
-	// 					player1, err := ch.searchContactDiscord(s, dataPlayer1.DiscordLogin)
-	// 					if err != nil {
-	// 						log.Printf("sending message: Not finded member in discord (%v)", dataPlayer1.DiscordLogin)
-	// 					}
-
-	// 					player2, err := ch.searchContactDiscord(s, dataPlayer2.DiscordLogin)
-	// 					if err != nil {
-	// 						log.Printf("sending message: Not finded member in discord (%v)", dataPlayer2.DiscordLogin)
-	// 					}
-
-	// 					// Test
-	// 					dv, err := ch.searchContactDiscord(s, "DreamerVulpi")
-	// 					if err != nil {
-	// 						log.Println(err.Error())
-	// 					}
-
-	// 					log.Println(dv)
-
-	// 					toPlayer1 := PlayerData{
-	// 						tournament: tournament.Name,
-	// 						setID:      set.Id,
-	// 						// user: discordUser{
-	// 						// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
-	// 						// },
-	// 						user: dv,
-	// 						// user:         player1, // Set player1
-	// 						streamName:   set.Stream.StreamName,
-	// 						streamSourse: set.Stream.StreamSource,
-	// 						roundNum:     set.Round,
-	// 						phaseGroupId: phaseGroup.Id,
-	// 						opponent: opponentData{
-	// 							// discordID: set.Slots[1].Entrant.Participants[0].GamerTag,
-	// 							discordID: player2.discordID, // Set player2
-	// 							nickname:  set.Slots[1].Entrant.Participants[0].GamerTag,
-	// 							gameID:    dataPlayer2.GameID,
-	// 						},
-	// 					}
-	// 					toPlayer2 := PlayerData{
-	// 						tournament: tournament.Name,
-	// 						setID:      set.Id,
-	// 						// user: discordUser{
-	// 						// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
-	// 						// },
-	// 						user: dv,
-	// 						// user:         player2, // Set player2
-	// 						streamName:   set.Stream.StreamName,
-	// 						streamSourse: set.Stream.StreamSource,
-	// 						roundNum:     set.Round,
-	// 						phaseGroupId: phaseGroup.Id,
-	// 						opponent: opponentData{
-	// 							// discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
-	// 							discordID: player1.discordID, // Set player1
-	// 							nickname:  set.Slots[0].Entrant.Participants[0].GamerTag,
-	// 							gameID:    dataPlayer1.GameID,
-	// 						},
-	// 					}
-
-	// 					log.Println(toPlayer1)
-	// 					log.Println(toPlayer2)
-
-	// 					if dataPlayer1.DiscordLogin != "N/D" && player1.discordID != "" {
-	// 						ch.sendMsg(s, toPlayer1)
-	// 						time.Sleep(1 * time.Second)
-	// 						log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
-	// 					}
-
-	// 					if dataPlayer2.DiscordLogin != "N/D" && player2.discordID != "" {
-	// 						ch.sendMsg(s, toPlayer2)
-	// 						time.Sleep(1 * time.Second)
-	// 						log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
-	// 					}
-	// 				}()
-	// 			}
-	// 			log.Printf("Checked phaseGroup(%v)", phaseGroup.Id)
-	// 		}
-	// 	}
-
-	// }
 	return err
 }

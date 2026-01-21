@@ -1,11 +1,11 @@
 package startgg
 
-type RawPhaseGroupData struct {
-	Data   DataPhaseGroup `json:"data"`
-	Errors []Errors       `json:"errors"`
+type RawPhaseGroupSetsData struct {
+	Data   DataPhaseGroupSets `json:"data"`
+	Errors []Errors           `json:"errors"`
 }
 
-type DataPhaseGroup struct {
+type DataPhaseGroupSets struct {
 	PhaseGroup PhaseGroupSets `json:"phaseGroup"`
 }
 
@@ -89,7 +89,7 @@ func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, er
 	}
 
 	// GetPhaseGroupSets || testGetPhaseGroupSets
-	results, err := GetData[RawPhaseGroupData](c, testGetPhaseGroupSets, variables)
+	results, err := GetData[RawPhaseGroupSetsData](c, TestGetPhaseGroupSets, variables)
 	if err != nil {
 		return nil, err
 	}

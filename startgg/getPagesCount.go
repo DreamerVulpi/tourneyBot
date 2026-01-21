@@ -1,8 +1,8 @@
 package startgg
 
 type RawPagesDataCount struct {
-	Data   DataPhaseGroup `json:"data"`
-	Errors []Errors       `json:"errors"`
+	Data   DataPhaseGroupSets `json:"data"`
+	Errors []Errors           `json:"errors"`
 }
 
 func (c *Client) GetPagesCount(phaseGroupID int64) (int, error) {

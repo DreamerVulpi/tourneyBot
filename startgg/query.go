@@ -83,7 +83,7 @@ const (
 			}
 		}
 	}`
-	testGetPhaseGroupSets = `
+	TestGetPhaseGroupSets = `
 	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){
 			id

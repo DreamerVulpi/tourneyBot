@@ -2,5 +2,7 @@
 *.exe
 *.csv
 .vscode
-*.json
 *.png
+*.txt
+contacts.json
+contactsEmbed.json
