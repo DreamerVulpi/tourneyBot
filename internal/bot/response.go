@@ -17,7 +17,7 @@ func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string)
 		},
 	)
 	if err != nil {
-		return errors.New("can't respond on message")
+		return errors.New("response: can't respond on message")
 	}
 	return nil
 }

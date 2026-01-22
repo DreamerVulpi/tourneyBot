@@ -272,7 +272,6 @@ func (ch *commandHandler) msgEmbed(title string, fields []*discordgo.MessageEmbe
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
-		// FIXME: Issue with none URL types - messages can't send in discord
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: ch.cfg.tournament.Logo.Img,
 		},

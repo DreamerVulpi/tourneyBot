@@ -190,6 +190,7 @@ func (ch *commandHandler) checkPhaseGroup(phaseGroupId int64, sets []startgg.Nod
 }
 
 // FIXME: BUG WITH NOT CORRECT DATA
+// FIXME: DOUBLE LOOP
 func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 	tournament, err := ch.startgg.client.GetTournament(strings.Replace(strings.SplitAfter(ch.slug, "/")[1], "/", "", 1))
 	if err != nil {
