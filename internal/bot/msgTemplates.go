@@ -79,7 +79,7 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		local = locale.En
 	}
 
-	var format int = ch.cfg.rulesMatches.StandardFormat
+	format := ch.cfg.rulesMatches.StandardFormat
 	if ch.startgg.finalBracketId == player.phaseGroupId {
 		if ch.startgg.minRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.minRoundNumB || ch.startgg.maxRoundNumA <= player.roundNum && player.roundNum <= ch.startgg.maxRoundNumB {
 			format = ch.cfg.rulesMatches.FinalsFormat

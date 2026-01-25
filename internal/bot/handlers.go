@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"errors"
-	"fmt"
 	"log"
 
 	// "time"
@@ -36,12 +34,14 @@ type commandHandler struct {
 }
 
 func (ch *commandHandler) viewData(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	local := ch.msgResponse(i.Locale.String())
+
 	embed := []*discordgo.MessageEmbed{
 		ch.msgViewData(i.Locale.String()),
 	}
 
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(errors.New("viewData: can't respond on message"))
+		log.Println("viewData:", local.errorMsg.Respond)
 	}
 }
 
@@ -53,10 +53,10 @@ func (ch *commandHandler) startSending(s *discordgo.Session, i *discordgo.Intera
 		})}
 
 	if err := ch.processSending(s, i, local); err != nil {
-		log.Printf("processSending: %v", err)
+		log.Println("processSending:", err)
 	}
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Printf("responseEmbed: %v\n", local.errorMsg.Respond)
+		log.Println("responseEmbed:", local.errorMsg.Respond)
 	}
 
 }
@@ -86,11 +86,11 @@ func (ch *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interactio
 	local := ch.msgResponse(i.Locale.String())
 	embed, err := ch.parseURL(i, local)
 	if err != nil {
-		log.Println(fmt.Errorf("parseURL: %v\n", err))
+		log.Println("parseURL:", err)
 	}
 
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(fmt.Errorf("setEvent: %v", local.errorMsg.Respond))
+		log.Println("setEvent:", local.errorMsg.Respond)
 	}
 }
 
@@ -99,7 +99,7 @@ func (ch *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.Int
 
 	embed := ch.getRuleMatchesData(i, local)
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(fmt.Errorf("editRuleMatches: %v", local.errorMsg.Respond))
+		log.Println("editRuleMatches:", local.errorMsg.Respond)
 	}
 }
 
@@ -108,11 +108,11 @@ func (ch *commandHandler) editStreamLobby(s *discordgo.Session, i *discordgo.Int
 
 	embed, err := ch.getStreamLobbyData(i, local)
 	if err != nil {
-		log.Printf("getStreamLobbyData: %v\n", err)
+		log.Println("getStreamLobbyData:", err)
 	}
 
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(fmt.Errorf("editStreamLobby: %v", local.errorMsg.Respond))
+		log.Println("editStreamLobby:", local.errorMsg.Respond)
 	}
 }
 
@@ -121,7 +121,7 @@ func (ch *commandHandler) editLogoTournament(s *discordgo.Session, i *discordgo.
 
 	embed := ch.getLogoTournamnentURL(i, local)
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(fmt.Errorf("editLogoTournament: %v", local.errorMsg.Respond))
+		log.Println("editLogoTournament:", local.errorMsg.Respond)
 	}
 }
 
@@ -131,10 +131,12 @@ func (ch *commandHandler) viewContacts(s *discordgo.Session, i *discordgo.Intera
 	go func() {
 		embed, err := ch.readCommandEmbedJSON(s, i, local)
 		if err != nil {
-			log.Println(fmt.Errorf("readCommandEmbedJSON: %v\n", err))
+			log.Println("readCommandEmbedJSON:", err)
 		}
-		if err := ch.responseEmbed(s, i, embed); err != nil {
-			log.Println(fmt.Errorf("viewContacts: %v", local.errorMsg.Respond))
+		if len(embed) > 0 {
+			if err := ch.responseEmbed(s, i, embed); err != nil {
+				log.Println("viewContacts response error:", err)
+			}
 		}
 	}()
 }
@@ -146,6 +148,6 @@ func (ch *commandHandler) roles(s *discordgo.Session, i *discordgo.InteractionCr
 	embed := ch.controlRole(s, arg)
 
 	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println(fmt.Errorf("roles: %v", local.errorMsg.Respond))
+		log.Println("roles:", local.errorMsg.Respond)
 	}
 }

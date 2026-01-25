@@ -36,26 +36,34 @@ type discordUser struct {
 }
 
 func (ch *commandHandler) searchContactDiscord(s *discordgo.Session, nickname string) (discordUser, error) {
-	name := strings.SplitN(nickname, "#", -1)
+	cleanName := strings.Split(nickname, "#")
+	if cleanName == nil {
+		return discordUser{}, fmt.Errorf("searchContactDiscord: empty nickname %v", cleanName)
+	}
 
-	member, err := s.GuildMembersSearch(ch.cfg.guildID, name[0], 1)
+	members, err := s.GuildMembersSearch(ch.cfg.guildID, cleanName[0], 1)
 	if err != nil {
 		return discordUser{}, err
 	}
 
-	if len(member) != 1 {
-		return discordUser{}, fmt.Errorf("searchContactDiscord: not finded %v", name[0])
+	if len(members) != 1 {
+		return discordUser{}, fmt.Errorf("searchContactDiscord: player not finded %v", cleanName[0])
 	}
 
+	targetMember := members[0]
 	// Get list rolesId including in locale (en is default)
 	roles := []string{}
-	for _, roleId := range (*member[0]).Roles {
+	for _, roleId := range targetMember.Roles {
 		if roleId == ch.cfg.rolesIdList.Ru {
 			roles = append(roles, roleId)
 		}
 	}
+	log.Println(discordUser{
+		discordID: strings.Split(targetMember.User.ID, "#")[0],
+		locales:   roles,
+	})
 	return discordUser{
-		discordID: strings.SplitN((*member[0]).User.ID, "#", -1)[0],
+		discordID: strings.Split(targetMember.User.ID, "#")[0],
 		locales:   roles,
 	}, nil
 }

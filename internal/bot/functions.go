@@ -59,7 +59,7 @@ func (ch *commandHandler) processSending(s *discordgo.Session, i *discordgo.Inte
 		}
 		go ch.Process(s)
 	}
-	return fmt.Errorf("guildID = %v | slug = %v\n", ch.cfg.guildID, ch.slug)
+	return fmt.Errorf("guildID = %v | slug = %v", ch.cfg.guildID, ch.slug)
 }
 
 // parse URL string for get slug value
@@ -75,7 +75,7 @@ func (ch *commandHandler) parseURL(i *discordgo.InteractionCreate, local respons
 		return embed, err
 	}
 	// separate URL to parts
-	arg := strings.SplitN(u.Path, "/", -1)
+	arg := strings.Split(u.Path, "/")
 
 	// check URL on key words
 	if len(arg) != 0 && arg[1] == "tournament" && arg[3] == "event" {
@@ -114,7 +114,7 @@ func (ch *commandHandler) getStreamLobbyData(i *discordgo.InteractionCreate, loc
 		embed = append(embed, ch.msgEmbed("Error", []*discordgo.MessageEmbedField{
 			{Name: local.vdMsg.MessageStreamHeader, Value: local.errorMsg.Input},
 		}))
-		return embed, fmt.Errorf("no 4 numbers in field\n")
+		return embed, fmt.Errorf("no 4 numbers in field")
 	}
 
 	ch.cfg.streamLobby.Area = args[0].StringValue()
@@ -166,6 +166,7 @@ func (ch *commandHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordg
 				return errRespond(embed), err
 			}
 		}
+		return nil, nil
 	default:
 		for _, embedContact := range ch.discord.embedContacts {
 			for _, field := range embedContact.Fields {

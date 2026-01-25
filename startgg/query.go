@@ -43,6 +43,8 @@ const (
 			state
 		}
 	}`
+
+	//nolint:unused
 	getPhaseGroupSets = `
 	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
 		phaseGroup(id:$phaseGroupId){

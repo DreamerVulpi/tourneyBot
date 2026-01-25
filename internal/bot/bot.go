@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"errors"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/startgg"
@@ -34,61 +36,62 @@ type params struct {
 
 // Get discord contacts from CSV file
 func loadCSV(nameFile string) (map[string]contactData, error) {
-	contacts := map[string]contactData{}
+	if nameFile == "" {
+		return nil, errors.New("loadCSV: filename is empty")
+	}
+
 	f, err := os.Open("config/" + nameFile)
 	if err != nil {
-		log.Println(err)
-		return map[string]contactData{}, err
-	} else {
-		if len(nameFile) != 0 {
-			defer f.Close()
+		return map[string]contactData{}, fmt.Errorf("loadCSV: open file, %v", err)
+	}
+	defer f.Close() //nolint:errcheck
 
-			csvReader := csv.NewReader(f)
-			records, _ := csvReader.ReadAll()
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return map[string]contactData{}, fmt.Errorf("loadCSV: read CSV, %v", err)
+	}
 
-			// Search index for get data
-			var indexDiscordColumn int
-			var indexGamerTagColumn int
-			var indexConnectColumn int
-			for index, column := range records[0] {
-				parts := strings.SplitN(column, " ", -1)
-				for _, part := range parts {
-					if part == "Discord!" {
-						indexDiscordColumn = index
-					}
-				}
-				if column == "Short GamerTag" {
-					indexGamerTagColumn = index
-				}
-				if column == "Connect" {
-					indexConnectColumn = index
-				}
+	if len(records) == 0 {
+		return map[string]contactData{}, nil
+	}
+
+	// Search index for get data
+	var idxDiscordColumn, idxGamerTagColumn, idxConnectColumn int
+	for index, column := range records[0] {
+		if strings.Contains(column, "Discord!") {
+			idxDiscordColumn = index
+		}
+		if column == "Short GamerTag" {
+			idxGamerTagColumn = index
+		}
+		if column == "Connect" {
+			idxConnectColumn = index
+		}
+	}
+
+	contacts := make(map[string]contactData, len(records)-1)
+	for i := 1; i < len(records); i++ {
+		attendee := records[i]
+
+		discordID := "N/D"
+		if val := attendee[idxDiscordColumn]; val != "" {
+			discordID = val
+		}
+
+		gameID := "N/D"
+		if val := attendee[idxConnectColumn]; val != "" {
+			rawGameID := strings.Split(attendee[idxConnectColumn], " ")
+			if len(rawGameID) >= 2 {
+				gameID = strings.ReplaceAll(rawGameID[1], ",", "")
 			}
+		}
 
-			for i, attendee := range records {
-				if i == 0 {
-					continue
-				}
-
-				var discordID string
-				if len(attendee[indexDiscordColumn]) != 0 {
-					discordID = attendee[indexDiscordColumn]
-				} else {
-					discordID = "N/D"
-				}
-
-				var gameID string
-				if len(attendee[indexConnectColumn]) != 0 {
-					rawGameID := strings.SplitN(attendee[indexConnectColumn], " ", -1)
-					gameID = strings.ReplaceAll(rawGameID[1], ",", "")
-				} else {
-					gameID = "N/D"
-				}
-
-				contacts[attendee[indexGamerTagColumn]] = contactData{
-					DiscordLogin: discordID,
-					GameID:       gameID,
-				}
+		key := attendee[idxGamerTagColumn]
+		if key != "" {
+			contacts[key] = contactData{
+				DiscordLogin: discordID,
+				GameID:       gameID,
 			}
 		}
 	}
@@ -99,36 +102,33 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 func (ch *commandHandler) getDiscordContacts(s *discordgo.Session) {
 	sliceMessages := []*discordgo.MessageEmbed{}
 	fields := []*discordgo.MessageEmbedField{}
-	counter := 0
+
 	for nickname, dc := range ch.discord.contacts {
-		if counter < 25 {
-			usr, err := ch.searchContactDiscord(s, nickname)
-			time.Sleep(1 * time.Second)
-			if err != nil {
-				log.Printf("viewContacts: %v", err.Error())
-				fields = append(fields, &discordgo.MessageEmbedField{
-					Name:   fmt.Sprintf("%v", nickname),
-					Value:  fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID),
-					Inline: false,
-				})
-			} else {
-				fields = append(fields, &discordgo.MessageEmbedField{
-					Name:   fmt.Sprintf("%v", nickname),
-					Value:  fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.discordID, dc.GameID),
-					Inline: false,
-				})
-			}
-			counter++
+		usr, err := ch.searchContactDiscord(s, nickname)
+		time.Sleep(1 * time.Second)
+		field := &discordgo.MessageEmbedField{
+			Name:   nickname,
+			Inline: false,
+		}
+
+		if err != nil {
+			field.Value = fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID)
 		} else {
-			embed := ch.msgEmbed("", fields)
-			sliceMessages = append(sliceMessages, embed)
+			field.Value = fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.discordID, dc.GameID)
+		}
+
+		fields = append(fields, field)
+
+		if len(fields) == 25 {
+			sliceMessages = append(sliceMessages, ch.msgEmbed("", fields))
 			fields = []*discordgo.MessageEmbedField{}
-			counter = 0
 		}
 	}
 
-	embed := ch.msgEmbed("", fields)
-	sliceMessages = append(sliceMessages, embed)
+	if len(fields) > 0 {
+		sliceMessages = append(sliceMessages, ch.msgEmbed("", fields))
+	}
+
 	ch.discord.embedContacts = sliceMessages
 }
 
@@ -376,7 +376,7 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 		registeredCommands[i] = cmd
 	}
 
-	defer session.Close()
+	defer session.Close() //nolint:errcheck
 
 	log.Println("the bot is online!")
 

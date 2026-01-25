@@ -74,7 +74,7 @@ func (c *Client) RunQuery(query []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Join(errors.New("HTTP Response - "), err)
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() //nolint:errcheck
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
