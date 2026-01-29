@@ -21,13 +21,13 @@ const (
 		}
 	}
 	`
-	// Test: Set filter to 3
+
 	getPagesCount = `
-	query getPagesCount($phaseGroupId: ID!){
+	query getPagesCount($phaseGroupId: ID!, $states: [Int]){
 		phaseGroup(id:$phaseGroupId){
 			id
 			sets (
-				filters: {state: 1}
+				filters: {state: $states}
 			){
 				pageInfo{
 					total
@@ -44,56 +44,15 @@ const (
 		}
 	}`
 
-	//nolint:unused
-	getPhaseGroupSets = `
-	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
+	GetPhaseGroupSets = `
+	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!, $states: [Int]){
 		phaseGroup(id:$phaseGroupId){
 			id
 			sets(
 				page: $page
 				perPage: $perPage
 				sortType: STANDARD
-				filters: {state: 1}
-			){
-			pageInfo{
-				total
-			}
-			nodes{
-					id
-					state
-					stream {
-						streamName
-						streamSource
-					}
-					fullRoundText
-        			round
-					slots{
-						entrant{
-							id
-							participants {
-								gamerTag
-								connectedAccounts
-								user {
-									authorizations(types: DISCORD) {
-										externalUsername
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}`
-	TestGetPhaseGroupSets = `
-	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
-		phaseGroup(id:$phaseGroupId){
-			id
-			sets(
-				page: $page
-				perPage: $perPage
-				sortType: STANDARD
-				filters: {state: 3}
+				filters: {state: $states}
 			){
 			pageInfo{
 				total

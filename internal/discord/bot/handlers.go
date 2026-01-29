@@ -31,6 +31,7 @@ type commandHandler struct {
 	startgg    strtgg
 	discord    discord
 	cfg        params
+	debugMode  bool
 }
 
 func (ch *commandHandler) viewData(s *discordgo.Session, i *discordgo.InteractionCreate) {

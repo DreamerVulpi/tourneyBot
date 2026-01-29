@@ -275,7 +275,7 @@ func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
 }
 
 // TODO: NEED TESTER MODE AS THIRD COMPONENT
-func Start(cfg config.Config, tournament config.ConfigTournament) error {
+func Start(client *http.Client, cfg config.Config, tournament config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
 	log.Println(cfg.Discord.Token)
 	if err != nil {
@@ -287,9 +287,7 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 		return err
 	}
 
-	client := startgg.NewClient(cfg.Startgg.Token, &http.Client{
-		Timeout: time.Second * 10,
-	})
+	startggClient := startgg.NewClient(client)
 
 	cfgCmdHadnler := params{
 		guildID:    cfg.Discord.GuildID,
@@ -319,9 +317,10 @@ func Start(cfg config.Config, tournament config.ConfigTournament) error {
 	cmdHandler := commandHandler{
 		stopSignal: make(chan struct{}),
 		startgg: strtgg{
-			client: client,
+			client: startggClient,
 		},
-		cfg: cfgCmdHadnler,
+		cfg:       cfgCmdHadnler,
+		debugMode: cfg.DebugMode.Mode,
 	}
 
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))

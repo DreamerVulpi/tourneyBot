@@ -17,9 +17,10 @@ func TestGetData(t *testing.T) {
 		"phaseGroupId": 2562129,
 		"page":         1,
 		"perPage":      4,
+		"states":       []int{1, 2, 3},
 	}
 
-	_, err := json.Marshal(startgg.PrepareQuery(startgg.TestGetPhaseGroupSets, variables))
+	_, err := json.Marshal(startgg.PrepareQuery(startgg.GetPhaseGroupSets, variables))
 	if err != nil {
 		assert.Error(t, fmt.Errorf("JSON Marshal - %w", err))
 	}

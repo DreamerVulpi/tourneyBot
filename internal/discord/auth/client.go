@@ -33,7 +33,7 @@ func NewOauth2Config() *oauth2.Config {
 			AuthURL:  authURL,
 			TokenURL: tokenURL,
 		},
-		Scopes: []string{"user.identity"},
+		Scopes: []string{"user.identity", "tournament.reporter"},
 	}
 }
 
@@ -98,7 +98,6 @@ func NewClient(ctx context.Context) (*http.Client, error) {
 		}
 
 		saveTokenToFile(token)
-
 	}
 
 	return conf.Client(ctx, token), nil

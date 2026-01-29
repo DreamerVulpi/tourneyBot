@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -22,6 +21,7 @@ type PlayerData struct {
 	phaseGroupId int64
 	user         discordUser
 	opponent     opponentData
+	IsTest       bool
 }
 
 type opponentData struct {
@@ -70,7 +70,7 @@ func (ch *commandHandler) searchContactDiscord(s *discordgo.Session, nickname st
 
 func (ch *commandHandler) checkContact(participants []startgg.Participants) contactData {
 	var discord string
-	if participants == nil {
+	if participants == nil || len(participants) == 0 {
 		discord = "N/D"
 	} else {
 		if participants[0].User.Authorizations == nil {
@@ -170,82 +170,61 @@ func (ch *commandHandler) Process(s *discordgo.Session) {
 	}
 }
 
-func (ch *commandHandler) checkPhaseGroup(phaseGroupId int64, sets []startgg.Nodes) error {
-	var min, max, minIndex, maxIndex int
+// func (ch *commandHandler) checkPhaseGroup(phaseGroupId int64, sets []startgg.Nodes) error {
+// 	var max, minIndex, maxIndex int
+// 	min := sets[0].Round
 
-	for index, set := range sets {
-		if min > set.Round {
-			min = set.Round
-			minIndex = index
-		}
-		if max < set.Round {
-			max = set.Round
-			maxIndex = index
-		}
-	}
+// 	for index, set := range sets {
+// 		if min > set.Round {
+// 			min = set.Round
+// 			minIndex = index
+// 		}
+// 		if max < set.Round {
+// 			max = set.Round
+// 			maxIndex = index
+// 		}
+// 	}
 
-	if sets[maxIndex].FullRoundText == "Grand Final" && sets[minIndex].FullRoundText == "Losers Final" {
-		log.Printf("Finded final bracket! -> %v , %v\n", min, max)
-		ch.startgg.minRoundNumA = min
-		ch.startgg.maxRoundNumB = max
-		ch.startgg.minRoundNumB = ch.startgg.minRoundNumA + 2
-		ch.startgg.maxRoundNumA = ch.startgg.maxRoundNumB - 3
-		ch.startgg.finalBracketId = phaseGroupId
-		return nil
-	} else {
-		return errors.New("not final bracket")
-	}
-}
+// 	if sets[maxIndex].FullRoundText == "Grand Final" && sets[minIndex].FullRoundText == "Losers Final" {
+// 		log.Printf("Finded final bracket! -> %v , %v\n", min, max)
+// 		ch.startgg.minRoundNumA = min
+// 		ch.startgg.maxRoundNumB = max
+// 		ch.startgg.minRoundNumB = ch.startgg.minRoundNumA + 2
+// 		ch.startgg.maxRoundNumA = ch.startgg.maxRoundNumB - 3
+// 		ch.startgg.finalBracketId = phaseGroupId
+// 		return nil
+// 	} else {
+// 		return errors.New("not final bracket")
+// 	}
+// }
 
-// FIXME: BUG WITH NOT CORRECT DATA
-// FIXME: DOUBLE LOOP
 func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 	tournament, err := ch.startgg.client.GetTournament(strings.Replace(strings.SplitAfter(ch.slug, "/")[1], "/", "", 1))
 	if err != nil {
 		return err
 	}
 
-	log.Println(tournament)
-
 	phaseGroups, err := ch.startgg.client.GetListGroups(ch.slug)
 	if err != nil {
 		return err
 	}
 
-	for _, phaseGroupId := range phaseGroups {
-		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroupId.Id)
+	// TODO: Nickname from discordOAuth
+	var dv discordUser
+	if ch.debugMode {
+		var err error
+		dv, err = ch.searchContactDiscord(s, "DreamerVulpi")
 		if err != nil {
-			return err
-		}
-		pagesCount, err := ch.startgg.client.GetPagesCount(phaseGroupId.Id)
-		if err != nil {
-			return err
-		}
-		if pagesCount == 0 {
-			continue
-		}
-
-		var pages int
-		if pagesCount <= 60 {
-			pages = 1
-		} else {
-			pages = int(math.Round(float64(pagesCount / 60)))
-		}
-
-		// Для тестирования IsDone
-		if state == startgg.IsDone {
-			for i := 0; i < pages; i++ {
-				sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, pages, 60)
-				if err != nil {
-					log.Println(errors.New("error get sets"))
-				}
-
-				if err := ch.checkPhaseGroup(phaseGroupId.Id, sets); err != nil {
-					log.Println(err.Error())
-				}
-			}
+			return fmt.Errorf("debug setup failed: %w", err)
 		}
 	}
+
+	// Get pages with state: Not started
+	states := []int{1}
+	if ch.debugMode {
+		states = []int{1, 2, 3}
+	}
+	log.Printf("DEBUG MODE STATUS: %v", ch.debugMode)
 
 	for _, phaseGroupId := range phaseGroups {
 		state, err := ch.startgg.client.GetPhaseGroupState(phaseGroupId.Id)
@@ -254,11 +233,9 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 		}
 		log.Printf("%v - %v\n", phaseGroupId, state)
 
-		total, err := ch.startgg.client.GetPagesCount(phaseGroupId.Id)
-		if err != nil {
-			return err
-		}
-		if total == 0 {
+		total, err := ch.startgg.client.GetPagesCount(phaseGroupId.Id, states)
+		log.Printf("DEBUG: Group %v | Total items: %v | Error: %v", phaseGroupId.Id, total, err)
+		if err != nil || total == 0 {
 			continue
 		}
 
@@ -266,21 +243,22 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 		if total <= 60 {
 			pages = 1
 		} else {
-			pages = int(math.Round(float64(total / 60)))
+			pages = int(math.Ceil(float64(total) / 60.0))
 		}
 
 		log.Printf("%v | %v | Pages: %v\n", phaseGroupId, total, pages)
 
 		for i := 0; i < pages; i++ {
 			log.Printf("%v | Page #%v\n", phaseGroupId, i)
-			sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, pages, 60)
+			sets, err := ch.startgg.client.GetSets(phaseGroupId.Id, i+1, 60, states)
 			if err != nil {
-				log.Println(errors.New("error get sets"))
+				log.Printf("Error getting sets: %v", err)
+				continue
 			}
 			log.Println("Got sets!")
 			for _, set := range sets {
-				log.Println("for sets")
-				go func() {
+				// Fixme: In debug mode make only 5 request
+				go func(set startgg.Nodes, testUser discordUser) {
 					// discord contact check
 					dataPlayer1 := ch.checkContact(set.Slots[0].Entrant.Participants)
 					dataPlayer2 := ch.checkContact(set.Slots[1].Entrant.Participants)
@@ -295,22 +273,13 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 						log.Printf("sending message: Not finded member in discord (%v)", dataPlayer2.DiscordLogin)
 					}
 
-					// Test
-					dv, err := ch.searchContactDiscord(s, "DreamerVulpi")
-					if err != nil {
-						log.Println(err.Error())
-					}
-
-					log.Println(dv)
-
 					toPlayer1 := PlayerData{
 						tournament: tournament.Name,
 						setID:      set.Id,
 						// user: discordUser{
 						// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 						// },
-						user: dv,
-						// user:         player1, // Set player1
+						user:         player1, // Set player1
 						streamName:   set.Stream.StreamName,
 						streamSourse: set.Stream.StreamSource,
 						roundNum:     set.Round,
@@ -328,8 +297,7 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 						// user: discordUser{
 						// 	discordID: set.Slots[0].Entrant.Participants[0].GamerTag,
 						// },
-						user: dv,
-						// user:         player2, // Set player2
+						user:         player2, // Set player2
 						streamName:   set.Stream.StreamName,
 						streamSourse: set.Stream.StreamSource,
 						roundNum:     set.Round,
@@ -342,24 +310,33 @@ func (ch *commandHandler) SendingMessages(s *discordgo.Session) error {
 						},
 					}
 
-					log.Println(toPlayer1)
-					log.Println(toPlayer2)
+					if ch.debugMode {
+						log.Printf("[DEBUG] Redirecting message for set %v to DreamerVulpi", set.Id)
+						toPlayer1.user = testUser
+						toPlayer2.user = testUser
 
-					if dataPlayer1.DiscordLogin != "N/D" || player1.discordID != "" {
 						ch.sendMsg(s, toPlayer1)
 						time.Sleep(1 * time.Second)
 						log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
-					}
-
-					if dataPlayer2.DiscordLogin != "N/D" || player2.discordID != "" {
 						ch.sendMsg(s, toPlayer2)
 						time.Sleep(1 * time.Second)
 						log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
+					} else {
+						if dataPlayer1.DiscordLogin != "N/D" || player1.discordID != "" {
+							ch.sendMsg(s, toPlayer1)
+							time.Sleep(1 * time.Second)
+							log.Printf("%v -> sended! #%v", set.Slots[0].Entrant.Participants[0].GamerTag, set.Id)
+						}
+
+						if dataPlayer2.DiscordLogin != "N/D" || player2.discordID != "" {
+							ch.sendMsg(s, toPlayer2)
+							time.Sleep(1 * time.Second)
+							log.Printf("%v -> sended! #%v", set.Slots[1].Entrant.Participants[0].GamerTag, set.Id)
+						}
 					}
-				}()
+				}(set, dv)
 			}
 			log.Printf("Checked phaseGroup(%v)", phaseGroupId)
-
 		}
 	}
 

@@ -28,14 +28,12 @@ const (
 )
 
 type Client struct {
-	AuthToken string
-	Client    *http.Client
+	httpClient *http.Client
 }
 
-func NewClient(token string, clt *http.Client) *Client {
+func NewClient(clt *http.Client) *Client {
 	return &Client{
-		AuthToken: token,
-		Client:    clt,
+		httpClient: clt,
 	}
 }
 
@@ -67,10 +65,9 @@ func (c *Client) RunQuery(query []byte) ([]byte, error) {
 
 	// Sets the headers within the request.
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken))
 
 	// Sends the request and receives the response of it.
-	res, err := c.Client.Do(req)
+	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Join(errors.New("HTTP Response - "), err)
 	}
@@ -86,7 +83,7 @@ func (c *Client) RunQuery(query []byte) ([]byte, error) {
 		return nil, err
 	}
 	if validation != "" {
-		return nil, errors.Join(errors.New("data Validation - "), err)
+		return nil, fmt.Errorf("data Validation: %s", validation)
 	}
 
 	return data, nil

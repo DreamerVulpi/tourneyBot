@@ -81,15 +81,15 @@ type Authorizations struct {
 	Discord string `json:"externalUsername"`
 }
 
-func (c *Client) GetSets(phaseGroupID int64, page int, perPage int) ([]Nodes, error) {
+func (c *Client) GetSets(phaseGroupID int64, page int, perPage int, states []int) ([]Nodes, error) {
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
 		"page":         page,
 		"perPage":      perPage,
+		"states":       states,
 	}
 
-	// GetPhaseGroupSets || testGetPhaseGroupSets
-	results, err := GetData[RawPhaseGroupSetsData](c, TestGetPhaseGroupSets, variables)
+	results, err := GetData[RawPhaseGroupSetsData](c, GetPhaseGroupSets, variables)
 	if err != nil {
 		return nil, err
 	}

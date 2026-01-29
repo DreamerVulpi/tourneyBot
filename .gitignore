@@ -6,3 +6,5 @@
 *.txt
 contacts.json
 contactsEmbed.json
+token.json
+.env
