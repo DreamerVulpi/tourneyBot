@@ -13,8 +13,11 @@ import (
 
 	"errors"
 
+	"context"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	"github.com/dreamervulpi/tourneyBot/startgg"
 )
 
@@ -89,7 +92,7 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 
 		key := attendee[idxGamerTagColumn]
 		if key != "" {
-			contacts[key] = contactData{
+			contacts[strings.ToLower(key)] = contactData{
 				DiscordLogin: discordID,
 				GameID:       gameID,
 			}
@@ -99,12 +102,12 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 	return contacts, nil
 }
 
-func (ch *commandHandler) getDiscordContacts(s *discordgo.Session) {
+func (ch *commandHandler) getDiscordContacts(ctx context.Context, s *discordgo.Session) {
 	sliceMessages := []*discordgo.MessageEmbed{}
 	fields := []*discordgo.MessageEmbedField{}
 
 	for nickname, dc := range ch.discord.contacts {
-		usr, err := ch.searchContactDiscord(s, nickname)
+		usr, err := ch.searchContactDiscord(ctx, s, nickname)
 		time.Sleep(1 * time.Second)
 		field := &discordgo.MessageEmbedField{
 			Name:   nickname,
@@ -114,32 +117,32 @@ func (ch *commandHandler) getDiscordContacts(s *discordgo.Session) {
 		if err != nil {
 			field.Value = fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID)
 		} else {
-			field.Value = fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.discordID, dc.GameID)
+			field.Value = fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.DiscordID, dc.GameID)
 		}
 
 		fields = append(fields, field)
 
 		if len(fields) == 25 {
-			sliceMessages = append(sliceMessages, ch.msgEmbed("", fields))
+			sliceMessages = append(sliceMessages, ch.msgEmbed("", fields, ColorSystem))
 			fields = []*discordgo.MessageEmbedField{}
 		}
 	}
 
 	if len(fields) > 0 {
-		sliceMessages = append(sliceMessages, ch.msgEmbed("", fields))
+		sliceMessages = append(sliceMessages, ch.msgEmbed("", fields, ColorSystem))
 	}
 
 	ch.discord.embedContacts = sliceMessages
 }
 
 // Search users in server (Guild) discord from CSV file
-func (ch *commandHandler) prepareContacts(s *discordgo.Session) error {
+func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Session) error {
 	contacts, err := os.ReadFile("contacts.json")
 	if err != nil {
 		log.Println("Prepare contacts from CSV...")
 		for nickname, dc := range ch.discord.contacts {
 			time.Sleep(1 * time.Second)
-			usr, err := ch.searchContactDiscord(s, nickname)
+			usr, err := ch.searchContactDiscord(ctx, s, nickname)
 			if err != nil {
 				ch.discord.contacts[nickname] = contactData{
 					DiscordID:    "N/D",
@@ -150,12 +153,12 @@ func (ch *commandHandler) prepareContacts(s *discordgo.Session) error {
 				continue
 			}
 			ch.discord.contacts[nickname] = contactData{
-				DiscordID:    usr.discordID,
+				DiscordID:    usr.DiscordID,
 				DiscordLogin: dc.DiscordLogin,
 				GameID:       dc.GameID,
 			}
 			time.Sleep(1 * time.Second)
-			err = s.GuildMemberRoleAdd(ch.cfg.guildID, usr.discordID, ch.discord.tourneyRole.ID)
+			err = s.GuildMemberRoleAdd(ch.cfg.guildID, usr.DiscordID, ch.discord.tourneyRole.ID)
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -186,7 +189,7 @@ func (ch *commandHandler) prepareContacts(s *discordgo.Session) error {
 		if len(ch.discord.contacts) != 0 {
 			log.Println("Generate contact.json file...")
 
-			ch.getDiscordContacts(s)
+			ch.getDiscordContacts(ctx, s)
 
 			file, err := json.MarshalIndent(ch.discord.embedContacts, "", " ")
 			if err != nil {
@@ -274,10 +277,8 @@ func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
 	return nil
 }
 
-// TODO: NEED TESTER MODE AS THIRD COMPONENT
-func Start(client *http.Client, cfg config.Config, tournament config.ConfigTournament) error {
+func Start(stClient *http.Client, dsAuth *auth.AuthClient, cfg config.Config, tournament config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
-	log.Println(cfg.Discord.Token)
 	if err != nil {
 		return err
 	}
@@ -287,11 +288,10 @@ func Start(client *http.Client, cfg config.Config, tournament config.ConfigTourn
 		return err
 	}
 
-	startggClient := startgg.NewClient(client)
-
+	appID := dsAuth.Config.ClientID
 	cfgCmdHadnler := params{
 		guildID:    cfg.Discord.GuildID,
-		appID:      cfg.Discord.AppID,
+		appID:      appID,
 		tournament: tournament,
 		rulesMatches: config.RulesMatches{
 			StandardFormat: tournament.Rules.StandardFormat,
@@ -314,11 +314,12 @@ func Start(client *http.Client, cfg config.Config, tournament config.ConfigTourn
 		logo: "https://i.imgur.com/n9SG5IL.png",
 	}
 
+	startggClient := startgg.NewClient(stClient)
 	cmdHandler := commandHandler{
-		stopSignal: make(chan struct{}),
 		startgg: strtgg{
 			client: startggClient,
 		},
+		auth:      dsAuth,
 		cfg:       cfgCmdHadnler,
 		debugMode: cfg.DebugMode.Mode,
 	}
@@ -343,7 +344,7 @@ func Start(client *http.Client, cfg config.Config, tournament config.ConfigTourn
 		if err != nil {
 			return err
 		}
-		err = cmdHandler.prepareContacts(session)
+		err = cmdHandler.prepareContacts(context.Background(), session)
 		if err != nil {
 			return err
 		}
@@ -367,7 +368,7 @@ func Start(client *http.Client, cfg config.Config, tournament config.ConfigTourn
 		if command.Name == "roles" && trigger || command.Name == "contacts" && trigger {
 			continue
 		}
-		cmd, err := session.ApplicationCommandCreate(cfg.Discord.AppID, cfg.Discord.GuildID, command)
+		cmd, err := session.ApplicationCommandCreate(appID, cfg.Discord.GuildID, command)
 		log.Printf("%v\n", command.Name)
 		if err != nil {
 			log.Printf("can't create '%v' command: %v\n", command.Name, err)
@@ -390,7 +391,7 @@ func Start(client *http.Client, cfg config.Config, tournament config.ConfigTourn
 	}
 
 	for _, v := range registeredCommands {
-		err := session.ApplicationCommandDelete(cfg.Discord.AppID, cfg.Discord.GuildID, v.ID)
+		err := session.ApplicationCommandDelete(appID, cfg.Discord.GuildID, v.ID)
 		log.Printf("%v\n", v.Name)
 		if err != nil {
 			fmt.Printf("Cannot delete '%v' command: %v\n", v.Name, err)

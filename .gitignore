@@ -6,5 +6,6 @@
 *.txt
 contacts.json
 contactsEmbed.json
-token.json
+token_discord.json
+token_startgg.json
 .env

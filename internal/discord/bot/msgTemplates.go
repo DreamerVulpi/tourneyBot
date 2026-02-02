@@ -9,6 +9,15 @@ import (
 	"github.com/dreamervulpi/tourneyBot/locale"
 )
 
+const (
+	ColorDefault = 0x3498db // Blue: standard matches and information messages (Hex: #3498db)
+	ColorStream  = 0x9b59b6 // Purple: matches on stream (Hex: #9b59b6)
+	ColorFinal   = 0xe74c3c // Red: final stage tournament (Hex: #e74c3c)
+	ColorSuccess = 0x2ecc71 // Green: success status (Hex: #2ecc71)
+	ColorError   = 0x960018 // Dark-red: errors (Hex: #960018)
+	ColorSystem  = 0x9c9c9c // Grey: check data and log (Hex: #9c9c9c)
+)
+
 type responseLocale struct {
 	errorMsg       locale.ErrorMessage
 	vdMsg          locale.ViewDataMessage
@@ -22,7 +31,7 @@ type responseLocale struct {
 	conn           string
 }
 
-func (ch *commandHandler) typeLocale(language string) locale.Lang {
+func (_ *commandHandler) typeLocale(language string) locale.Lang {
 	var local locale.Lang
 	switch language {
 	case "Russian":
@@ -71,7 +80,6 @@ func (ch *commandHandler) fieldConnection(local locale.Lang) string {
 }
 
 func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, channel *discordgo.Channel, link string, roleId string) {
-	var message *discordgo.MessageEmbed
 	var local locale.Lang
 	if roleId == ch.cfg.rolesIdList.Ru {
 		local = locale.Ru
@@ -86,24 +94,41 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		}
 	}
 
-	if len(player.streamSourse) == 0 {
-		gameID := player.opponent.gameID
-		if len(gameID) == 0 {
-			gameID = local.ErrorMessage.NoData
-		}
-		discordId := fmt.Sprintf("<@%v>", player.opponent.discordID)
-		if len(discordId) == 0 {
-			discordId = local.ErrorMessage.NoData
-		}
+	embedColor := ColorDefault
+	if len(player.streamSourse) > 0 {
+		embedColor = ColorStream
+	} else if ch.startgg.finalBracketId == player.phaseGroupId {
+		embedColor = ColorFinal
+	}
 
+	var message *discordgo.MessageEmbed
+	gameID := player.opponent.GameID
+	if len(gameID) == 0 {
+		gameID = local.ErrorMessage.NoData
+	}
+	rawID := player.opponent.DiscordID
+	login := player.opponent.DiscordLogin
+	var discordDisplay string
+	if len(rawID) == 0 && len(login) == 0 {
+		discordDisplay = local.ErrorMessage.NoData
+	} else {
+		if len(rawID) > 0 {
+			discordDisplay = fmt.Sprintf("<@%v>", rawID)
+		} else {
+			discordDisplay = login
+		}
+	}
+	log.Printf("DiscordDisplay: %v | Set: %v", discordDisplay, link)
+
+	if len(player.streamSourse) == 0 {
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.InviteMessage.MessageHeader},
-			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.nickname), Inline: true},
+			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.GameNickname), Inline: true},
 			{Name: local.InviteMessage.GameID, Value: fmt.Sprintf("```%v```", gameID), Inline: true},
-			{Name: local.InviteMessage.Discord, Value: discordId, Inline: true},
+			{Name: local.InviteMessage.Discord, Value: discordDisplay, Inline: true},
 
 			{Name: local.InviteMessage.CheckIn, Value: link},
-			{Name: fmt.Sprintf(local.InviteMessage.Warning, ch.cfg.rulesMatches.Waiting), Value: ""},
+			{Name: fmt.Sprintf(local.InviteMessage.Warning, ch.cfg.rulesMatches.Waiting), Value: "\u200B"},
 
 			{Name: local.InviteMessage.SettingsHeader},
 			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
@@ -112,7 +137,7 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
 			{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 		}
-		message = ch.msgEmbed(fmt.Sprintf(local.InviteMessage.Title, player.tournament), fields)
+		message = ch.msgEmbed(fmt.Sprintf(local.InviteMessage.Title, player.tournament), fields, embedColor)
 		message.Description = local.InviteMessage.Description
 	} else {
 		var stream string
@@ -125,7 +150,7 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.StreamLobbyMessage.StreamLink, Value: stream},
 			{Name: local.StreamLobbyMessage.MessageHeader, Value: link},
-			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, ch.cfg.rulesMatches.Waiting)},
+			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, ch.cfg.rulesMatches.Waiting), Value: "\u200B"},
 
 			{Name: local.StreamLobbyMessage.ParamsHeader},
 			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
@@ -135,9 +160,10 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 			{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 			{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
 		}
-		message = ch.msgEmbed(fmt.Sprintf(local.StreamLobbyMessage.Title, player.tournament), fields)
+		message = ch.msgEmbed(fmt.Sprintf(local.StreamLobbyMessage.Title, player.tournament), fields, embedColor)
 		message.Description = local.StreamLobbyMessage.Description
 	}
+
 	_, err := s.ChannelMessageSendEmbed(channel.ID, message)
 	if err != nil {
 		log.Println("error sending DM message:", err)
@@ -148,10 +174,14 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 		); err != nil {
 			log.Println(err.Error())
 		}
+	} else if ch.startgg.finalBracketId == player.phaseGroupId {
+		// TODO: MsgFinals
+		log.Println(ColorFinal)
 	}
+
 }
 
-func (ch *commandHandler) msgRuleMatches(language string) *discordgo.MessageEmbed {
+func (ch *commandHandler) msgRuleMatches(language string, embedColor int) *discordgo.MessageEmbed {
 	local := ch.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
@@ -163,11 +193,11 @@ func (ch *commandHandler) msgRuleMatches(language string) *discordgo.MessageEmbe
 		{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
 		{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 	}
-	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
+	message := ch.msgEmbed(local.ViewDataMessage.Title, fields, embedColor)
 	return message
 }
 
-func (ch *commandHandler) msgStreamLobby(language string) *discordgo.MessageEmbed {
+func (ch *commandHandler) msgStreamLobby(language string, embedColor int) *discordgo.MessageEmbed {
 	local := ch.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
@@ -178,7 +208,7 @@ func (ch *commandHandler) msgStreamLobby(language string) *discordgo.MessageEmbe
 		{Name: local.StreamLobbyMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
 		{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode), Inline: true},
 	}
-	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
+	message := ch.msgEmbed(local.ViewDataMessage.Title, fields, embedColor)
 	return message
 }
 
@@ -231,7 +261,7 @@ func (ch *commandHandler) msgViewData(language string) *discordgo.MessageEmbed {
 			Value:  fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, ch.cfg.streamLobby.Passcode),
 			Inline: true},
 	}
-	message := ch.msgEmbed(local.ViewDataMessage.Title, fields)
+	message := ch.msgEmbed(local.ViewDataMessage.Title, fields, ColorSystem)
 	return message
 }
 
@@ -264,9 +294,10 @@ func (ch *commandHandler) msgResponse(language string) responseLocale {
 	return result
 }
 
-func (ch *commandHandler) msgEmbed(title string, fields []*discordgo.MessageEmbedField) *discordgo.MessageEmbed {
+func (ch *commandHandler) msgEmbed(title string, fields []*discordgo.MessageEmbedField, color int) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Title: title,
+		Color: color,
 		Author: &discordgo.MessageEmbedAuthor{
 			IconURL: ch.cfg.logo,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",

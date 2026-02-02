@@ -41,11 +41,11 @@ func (ch *commandHandler) controlRole(s *discordgo.Session, arg string) []*disco
 		}
 		embed = append(embed, ch.msgEmbed("Roles", []*discordgo.MessageEmbedField{
 			{Name: "Success!"},
-		}))
+		}, 0x2ecc71))
 	} else {
 		embed = append(embed, ch.msgEmbed("Roles", []*discordgo.MessageEmbedField{
 			{Name: "Error: Can't work with roles by commands", Value: "CSV file with data isn't loaded. Load file and restart bot."},
-		}))
+		}, 0xe74c3c))
 	}
 	return embed
 }
@@ -71,7 +71,7 @@ func (ch *commandHandler) parseURL(i *discordgo.InteractionCreate, local respons
 	if err != nil {
 		embed = append(embed, ch.msgEmbed("Error", []*discordgo.MessageEmbedField{
 			{Name: "**Slug**", Value: local.errorMsg.Input},
-		}))
+		}, 0xe74c3c)) //
 		return embed, err
 	}
 	// separate URL to parts
@@ -82,17 +82,17 @@ func (ch *commandHandler) parseURL(i *discordgo.InteractionCreate, local respons
 		ch.slug = arg[1] + "/" + arg[2] + "/" + arg[3] + "/" + arg[4]
 		embed = append(embed, ch.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "**Slug**", Value: ch.slug},
-		}))
+		}, ColorSuccess))
 		return embed, nil
 	}
 
 	embed = append(embed, ch.msgEmbed("Error", []*discordgo.MessageEmbedField{
 		{Name: "**Slug**", Value: local.errorMsg.Input},
-	}))
-	return embed, fmt.Errorf(local.errorMsg.Input)
+	}, ColorError))
+	return embed, fmt.Errorf("%s", local.errorMsg.Input)
 }
 
-func (ch *commandHandler) getRuleMatchesData(i *discordgo.InteractionCreate, local responseLocale) []*discordgo.MessageEmbed {
+func (ch *commandHandler) getRuleMatchesData(i *discordgo.InteractionCreate) []*discordgo.MessageEmbed {
 	args := i.ApplicationCommandData().Options
 	ch.cfg.rulesMatches.StandardFormat = int(args[0].IntValue())
 	ch.cfg.rulesMatches.FinalsFormat = int(args[1].IntValue())
@@ -102,7 +102,7 @@ func (ch *commandHandler) getRuleMatchesData(i *discordgo.InteractionCreate, loc
 	ch.cfg.rulesMatches.Crossplatform = args[5].BoolValue()
 
 	// Saving values in template msgRuleMatches
-	return []*discordgo.MessageEmbed{ch.msgRuleMatches(i.Locale.String())}
+	return []*discordgo.MessageEmbed{ch.msgRuleMatches(i.Locale.String(), ColorSystem)}
 }
 
 func (ch *commandHandler) getStreamLobbyData(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
@@ -113,7 +113,7 @@ func (ch *commandHandler) getStreamLobbyData(i *discordgo.InteractionCreate, loc
 	if len(code) != 4 {
 		embed = append(embed, ch.msgEmbed("Error", []*discordgo.MessageEmbedField{
 			{Name: local.vdMsg.MessageStreamHeader, Value: local.errorMsg.Input},
-		}))
+		}, ColorError))
 		return embed, fmt.Errorf("no 4 numbers in field")
 	}
 
@@ -124,7 +124,7 @@ func (ch *commandHandler) getStreamLobbyData(i *discordgo.InteractionCreate, loc
 	ch.cfg.streamLobby.Passcode = code
 
 	// Saving values in template msgStreamLobby
-	embed = append(embed, ch.msgStreamLobby(i.Locale.String()))
+	embed = append(embed, ch.msgStreamLobby(i.Locale.String(), ColorStream))
 	return embed, nil
 }
 
@@ -134,14 +134,14 @@ func (ch *commandHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, 
 
 	return []*discordgo.MessageEmbed{ch.msgEmbed(local.vdMsg.LogoTournament, []*discordgo.MessageEmbedField{
 		{Name: "**Url**", Value: fmt.Sprintf("%v", ch.cfg.tournament.Game.Name)},
-	})}
+	}, ColorSystem)}
 }
 
 func (ch *commandHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
 	errRespond := func(embed []*discordgo.MessageEmbed) []*discordgo.MessageEmbed {
 		embed = append(embed, ch.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "", Value: local.errorMsg.NoData},
-		}))
+		}, ColorSystem))
 
 		return embed
 	}
@@ -171,13 +171,13 @@ func (ch *commandHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordg
 		for _, embedContact := range ch.discord.embedContacts {
 			for _, field := range embedContact.Fields {
 				// If argument from command == name from field which from json file
-				if strings.EqualFold(arg, field.Name) {
+				if strings.EqualFold(strings.ToLower(arg), strings.ToLower(field.Name)) {
 					var fields []*discordgo.MessageEmbedField
 					fields = append(fields, &discordgo.MessageEmbedField{
 						Name:  field.Name,
 						Value: field.Value,
 					})
-					embed = append(embed, ch.msgEmbed(local.vdMsg.Title, fields))
+					embed = append(embed, ch.msgEmbed(local.vdMsg.Title, fields, ColorSystem))
 					return embed, nil
 				}
 			}

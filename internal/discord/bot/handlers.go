@@ -2,10 +2,14 @@ package bot
 
 import (
 	"log"
+	"sync"
 
 	// "time"
 
+	"context"
+
 	"github.com/bwmarrin/discordgo"
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	"github.com/dreamervulpi/tourneyBot/startgg"
 )
 
@@ -27,11 +31,13 @@ type strtgg struct {
 
 type commandHandler struct {
 	slug       string
-	stopSignal chan struct{}
 	startgg    strtgg
 	discord    discord
 	cfg        params
+	cancelFunc context.CancelFunc
+	mu         sync.Mutex
 	debugMode  bool
+	auth       *auth.AuthClient
 }
 
 func (ch *commandHandler) viewData(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -48,18 +54,9 @@ func (ch *commandHandler) viewData(s *discordgo.Session, i *discordgo.Interactio
 
 func (ch *commandHandler) startSending(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	local := ch.msgResponse(i.Locale.String())
-	embed := []*discordgo.MessageEmbed{
-		ch.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
-			{Name: "", Value: local.errorMsg.Input},
-		})}
-
 	if err := ch.processSending(s, i, local); err != nil {
 		log.Println("processSending:", err)
 	}
-	if err := ch.responseEmbed(s, i, embed); err != nil {
-		log.Println("responseEmbed:", local.errorMsg.Respond)
-	}
-
 }
 
 func (ch *commandHandler) stopSending(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -67,19 +64,21 @@ func (ch *commandHandler) stopSending(s *discordgo.Session, i *discordgo.Interac
 
 	go func() {
 		if err := response(s, i, local.responseMsg.Stopping); err != nil {
-			log.Println(err.Error())
-			if _, err := s.ChannelMessageSend(i.ChannelID, err.Error()); err != nil {
-				log.Println(err.Error())
-			}
+			log.Println("Error sending interaction response:", err)
 		}
 	}()
 
-	// Send signal to stop process
-	ch.stopSignal <- struct{}{}
+	ch.mu.Lock()
+	if ch.cancelFunc != nil {
+		ch.cancelFunc()
+		ch.cancelFunc = nil
+		log.Println("SUCCESS: Cancel function executed")
+	}
+	ch.mu.Unlock()
 
 	_, err := s.ChannelMessageSend(i.ChannelID, local.responseMsg.Stopped)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println("Error sending final message:", err)
 	}
 }
 
@@ -98,7 +97,7 @@ func (ch *commandHandler) setEvent(s *discordgo.Session, i *discordgo.Interactio
 func (ch *commandHandler) editRuleMatches(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	local := ch.msgResponse(i.Locale.String())
 
-	embed := ch.getRuleMatchesData(i, local)
+	embed := ch.getRuleMatchesData(i)
 	if err := ch.responseEmbed(s, i, embed); err != nil {
 		log.Println("editRuleMatches:", local.errorMsg.Respond)
 	}
