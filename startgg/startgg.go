@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+// State (1 - IsNotStarted, 2 - InProcess, 3 - IsDone)
 type State int
 
 const (
@@ -17,6 +18,7 @@ const (
 	IsDone       State = 3
 )
 
+// State for event (1 - Created, 2 - Active, 3 - Completed)
 type StateEvent string
 
 const (
@@ -26,14 +28,12 @@ const (
 )
 
 type Client struct {
-	AuthToken string
-	Client    *http.Client
+	httpClient *http.Client
 }
 
-func NewClient(token string, clt *http.Client) *Client {
+func NewClient(clt *http.Client) *Client {
 	return &Client{
-		AuthToken: token,
-		Client:    clt,
+		httpClient: clt,
 	}
 }
 
@@ -42,40 +42,6 @@ func PrepareQuery(query string, variables map[string]interface{}) map[string]int
 		"query":     query,
 		"variables": variables,
 	}
-}
-
-func (c *Client) RunQuery(query []byte) ([]byte, error) {
-	// Creates the POST request and checks for errors.
-	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
-	if err != nil {
-		return nil, errors.Join(errors.New("HTTP Request - "), err)
-	}
-
-	// Sets the headers within the request.
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken))
-
-	// Sends the request and receives the response of it.
-	res, err := c.Client.Do(req)
-	if err != nil {
-		return nil, errors.Join(errors.New("HTTP Response - "), err)
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, errors.Join(errors.New("read Data - "), err)
-	}
-
-	validation, err := validateData(data)
-	if err != nil {
-		return nil, err
-	}
-	if validation != "" {
-		return nil, errors.Join(errors.New("data Validation - "), err)
-	}
-
-	return data, nil
 }
 
 func validateData(data []byte) (string, error) {
@@ -87,4 +53,59 @@ func validateData(data []byte) (string, error) {
 	}
 
 	return results.Message, nil
+}
+
+// Execute query for get raw data
+func (c *Client) RunQuery(query []byte) ([]byte, error) {
+	// Creates the POST request and checks for errors.
+	req, err := http.NewRequest("POST", "https://api.start.gg/gql/alpha", bytes.NewBuffer(query))
+	if err != nil {
+		return nil, errors.Join(errors.New("HTTP Request - "), err)
+	}
+
+	// Sets the headers within the request.
+	req.Header.Set("Content-Type", "application/json")
+
+	// Sends the request and receives the response of it.
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Join(errors.New("HTTP Response - "), err)
+	}
+	defer res.Body.Close() //nolint:errcheck
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Join(errors.New("read Data - "), err)
+	}
+
+	validation, err := validateData(data)
+	if err != nil {
+		return nil, err
+	}
+	if validation != "" {
+		return nil, fmt.Errorf("data Validation: %s", validation)
+	}
+
+	return data, nil
+}
+
+// Execute query for get data from startgg according T type
+func GetData[T any](c *Client, rawQuery string, variables map[string]any) (*T, error) {
+	preparedQuery, err := json.Marshal(PrepareQuery(rawQuery, variables))
+	if err != nil {
+		return nil, fmt.Errorf("JSON Marshal - %w", err)
+	}
+
+	rawData, err := c.RunQuery(preparedQuery)
+	if err != nil {
+		return nil, fmt.Errorf("RunQuery - %w", err)
+	}
+
+	var results T
+	err = json.Unmarshal(rawData, &results)
+	if err != nil {
+		return nil, fmt.Errorf("JSON Unmarshal - %w", err)
+	}
+
+	return &results, nil
 }

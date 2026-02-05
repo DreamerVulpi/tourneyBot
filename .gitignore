@@ -2,4 +2,10 @@
 *.exe
 *.csv
 .vscode
-*.json
+*.png
+*.txt
+contacts.json
+contactsEmbed.json
+token_discord.json
+token_startgg.json
+.env

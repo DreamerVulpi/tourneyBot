@@ -1,10 +1,5 @@
 package startgg
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 type RawTournamentData struct {
 	Data   DataTournament `json:"data"`
 	Errors []Errors       `json:"errors"`
@@ -25,20 +20,9 @@ func (c *Client) GetTournament(tourneySlug string) (Tournament, error) {
 		"tourneySlug": tourneySlug,
 	}
 
-	query, err := json.Marshal(PrepareQuery(getTournament, variables))
-	if err != nil {
-		return Tournament{}, fmt.Errorf("JSON Marshal - %w", err)
-	}
-
-	data, err := c.RunQuery(query)
+	results, err := GetData[RawTournamentData](c, getTournament, variables)
 	if err != nil {
 		return Tournament{}, err
-	}
-
-	results := &RawTournamentData{}
-	err = json.Unmarshal(data, results)
-	if err != nil {
-		return Tournament{}, fmt.Errorf("JSON Unmarshal - %w", err)
 	}
 
 	return results.Data.Tournament, nil

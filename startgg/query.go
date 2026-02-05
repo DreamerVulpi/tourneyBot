@@ -21,13 +21,13 @@ const (
 		}
 	}
 	`
-	// Test: Set filter to 3
+
 	getPagesCount = `
-	query getPagesCount($phaseGroupId: ID!){
+	query getPagesCount($phaseGroupId: ID!, $states: [Int]){
 		phaseGroup(id:$phaseGroupId){
 			id
 			sets (
-				filters: {state: 1}
+				filters: {state: $states}
 			){
 				pageInfo{
 					total
@@ -43,16 +43,16 @@ const (
 			state
 		}
 	}`
-	// Test: Set filter to 3
-	getPhaseGroupSets = `
-	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!){
+
+	GetPhaseGroupSets = `
+	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!, $states: [Int]){
 		phaseGroup(id:$phaseGroupId){
 			id
 			sets(
 				page: $page
 				perPage: $perPage
 				sortType: STANDARD
-				filters: {state: 1}
+				filters: {state: $states}
 			){
 			pageInfo{
 				total

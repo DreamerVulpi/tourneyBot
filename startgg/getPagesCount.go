@@ -1,34 +1,23 @@
 package startgg
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
 )
 
 type RawPagesDataCount struct {
-	Data   DataPhaseGroup `json:"data"`
-	Errors []Errors       `json:"errors"`
+	Data   DataPhaseGroupSets `json:"data"`
+	Errors []Errors           `json:"errors"`
 }
 
-func (c *Client) GetPagesCount(phaseGroupID int64) (int, error) {
+func (c *Client) GetPagesCount(phaseGroupID int64, states []int) (int, error) {
 	var variables = map[string]any{
 		"phaseGroupId": phaseGroupID,
+		"states":       states,
 	}
-
-	query, err := json.Marshal(PrepareQuery(getPagesCount, variables))
-	if err != nil {
-		return 0, fmt.Errorf("JSON Marshal - %w", err)
-	}
-
-	data, err := c.RunQuery(query)
+	log.Printf("SENDING VARS: %+v", variables)
+	results, err := GetData[RawPagesDataCount](c, getPagesCount, variables)
 	if err != nil {
 		return 0, err
-	}
-
-	results := &RawPagesDataCount{}
-	err = json.Unmarshal(data, results)
-	if err != nil {
-		return 0, fmt.Errorf("JSON Unmarshal - %w", err)
 	}
 
 	return results.Data.PhaseGroup.Sets.PageInfo.Total, nil

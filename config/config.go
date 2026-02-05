@@ -7,14 +7,9 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type ConfigStartGG struct {
-	Token string `toml:"token"`
-}
-
 type ConfigDiscordBot struct {
 	Token   string `toml:"token"`
 	GuildID string `toml:"guildID"`
-	AppID   string `toml:"appID"`
 }
 
 type ConfigGame struct {
@@ -25,10 +20,14 @@ type ConfigRolesIdDiscord struct {
 	Ru string `toml:"ru"`
 }
 
+type DebugMode struct {
+	Mode bool `toml:"mode"`
+}
+
 type Config struct {
-	Startgg ConfigStartGG        `toml:"startgg"`
-	Discord ConfigDiscordBot     `toml:"discordbot"`
-	Roles   ConfigRolesIdDiscord `toml:"roles"`
+	Discord   ConfigDiscordBot     `toml:"discordbot"`
+	Roles     ConfigRolesIdDiscord `toml:"roles"`
+	DebugMode DebugMode            `toml:"debug"`
 }
 
 type RulesMatches struct {
@@ -74,12 +73,8 @@ func LoadConfig(file string) (Config, error) {
 	}
 
 	switch {
-	case len(cfg.Startgg.Token) == 0:
-		return Config{}, errors.New("startGG: token is empty")
 	case len(cfg.Discord.Token) == 0:
 		return Config{}, errors.New("discord: token is empty")
-	case len(cfg.Discord.AppID) == 0:
-		return Config{}, errors.New("discord: appID is empty")
 	case len(cfg.Discord.GuildID) == 0:
 		return Config{}, errors.New("discord: guildID is empty")
 	case len(cfg.Roles.Ru) == 0:
