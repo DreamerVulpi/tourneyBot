@@ -9,3 +9,4 @@ contactsEmbed.json
 token_discord.json
 token_startgg.json
 .env
+docker-compose.yaml

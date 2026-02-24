@@ -19,6 +19,7 @@ import (
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	"github.com/dreamervulpi/tourneyBot/startgg"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type contactData struct {
@@ -277,7 +278,7 @@ func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
 	return nil
 }
 
-func Start(stClient *http.Client, dsAuth *auth.AuthClient, cfg config.Config, tournament config.ConfigTournament) error {
+func Start(stClient *http.Client, dsAuth *auth.AuthClient, pool *pgxpool.Pool, cfg config.Config, tournament config.ConfigTournament) error {
 	session, err := discordgo.New(cfg.Discord.Token)
 	if err != nil {
 		return err
