@@ -24,10 +24,15 @@ type DebugMode struct {
 	Mode bool `toml:"mode"`
 }
 
+type Database struct {
+	Dsn string `toml:"dsn"`
+}
+
 type Config struct {
 	Discord   ConfigDiscordBot     `toml:"discordbot"`
 	Roles     ConfigRolesIdDiscord `toml:"roles"`
 	DebugMode DebugMode            `toml:"debug"`
+	Db        Database             `toml:"database"`
 }
 
 type RulesMatches struct {
@@ -80,6 +85,8 @@ func LoadConfig(file string) (Config, error) {
 	case len(cfg.Roles.Ru) == 0:
 		log.Println(errors.New("roles: ru locale is empty").Error())
 		return cfg, nil
+	case len(cfg.Db.Dsn) == 0:
+		return Config{}, errors.New("postgres: dsn string is empty")
 	default:
 		return cfg, nil
 	}

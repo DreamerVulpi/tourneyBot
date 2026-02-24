@@ -175,10 +175,25 @@ func (ch *commandHandler) msgInvite(s *discordgo.Session, player PlayerData, cha
 			log.Println(err.Error())
 		}
 	} else if ch.startgg.finalBracketId == player.phaseGroupId {
-		// TODO: MsgFinals
-		log.Println(ColorFinal)
-	}
+		fields := []*discordgo.MessageEmbedField{
+			{Name: local.InviteMessage.MessageHeader},
+			{Name: local.InviteMessage.Nickname, Value: fmt.Sprintf("```%v```", player.opponent.GameNickname), Inline: true},
+			{Name: local.InviteMessage.GameID, Value: fmt.Sprintf("```%v```", gameID), Inline: true},
+			{Name: local.InviteMessage.Discord, Value: discordDisplay, Inline: true},
 
+			{Name: local.InviteMessage.CheckIn, Value: link},
+			{Name: fmt.Sprintf(local.InviteMessage.Warning, ch.cfg.rulesMatches.Waiting), Value: "\u200B"},
+
+			{Name: local.InviteMessage.SettingsHeader},
+			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
+			{Name: local.InviteMessage.Stage, Value: ch.fieldStage(local), Inline: true},
+			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", ch.cfg.rulesMatches.Rounds), Inline: true},
+			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, ch.cfg.rulesMatches.Duration), Inline: true},
+			{Name: local.InviteMessage.Crossplatform, Value: ch.fieldCrossplay(local), Inline: true},
+		}
+		message := ch.msgEmbed(local.ViewDataMessage.Title, fields, ColorFinal)
+		message.Description = local.InviteMessage.Description
+	}
 }
 
 func (ch *commandHandler) msgRuleMatches(language string, embedColor int) *discordgo.MessageEmbed {
