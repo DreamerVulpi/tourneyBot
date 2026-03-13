@@ -1,0 +1,187 @@
+package discord
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"net/url"
+	"strings"
+
+	"regexp"
+
+	"os"
+
+	"github.com/bwmarrin/discordgo"
+)
+
+func (dh *discordHandler) controlRole(s *discordgo.Session, arg string) []*discordgo.MessageEmbed {
+	var embed []*discordgo.MessageEmbed
+	if len(dh.contacts.contacts) != 0 {
+		if arg == "give" {
+			for _, usr := range dh.contacts.contacts {
+				if usr.MessenagerID == "N/D" {
+					continue
+				}
+				err := s.GuildMemberRoleAdd(dh.cfg.guildID, usr.MessenagerID, dh.contacts.tourneyRole.ID)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+		} else {
+			for _, usr := range dh.contacts.contacts {
+				if usr.MessenagerID == "N/D" {
+					continue
+				}
+				err := s.GuildMemberRoleRemove(dh.cfg.guildID, usr.MessenagerID, dh.contacts.tourneyRole.ID)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+		}
+		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
+			{Name: "Success!"},
+		}, 0x2ecc71))
+	} else {
+		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
+			{Name: "Error: Can't work with roles by commands", Value: "CSV file with data isn't loaded. Load file and restart bot."},
+		}, 0xe74c3c))
+	}
+	return embed
+}
+
+// method for start sending messages for players tournament
+func (dh *discordHandler) processSending(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) error {
+	// Check values ID server (guildID) and URL to tournament (slug)
+	if dh.cfg.guildID != "" && dh.slug != "" {
+		if err := response(s, i, local.responseMsg.Starting); err != nil {
+			return err
+		}
+		go dh.Process(s)
+	}
+	return fmt.Errorf("guildID = %v | slug = %v", dh.cfg.guildID, dh.slug)
+}
+
+// parse URL string for get slug value
+func (s *discordHandler) parseURL(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+	embed := []*discordgo.MessageEmbed{}
+
+	// parse string with URL
+	u, err := url.Parse(i.ApplicationCommandData().Options[0].StringValue())
+	if err != nil {
+		embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: local.errorMsg.Input},
+		}, 0xe74c3c)) //
+		return embed, err
+	}
+	// separate URL to parts
+	arg := strings.Split(u.Path, "/")
+
+	// check URL on key words
+	if len(arg) != 0 && arg[1] == "tournament" && arg[3] == "event" {
+		s.slug = arg[1] + "/" + arg[2] + "/" + arg[3] + "/" + arg[4]
+		embed = append(embed, s.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+			{Name: "**Slug**", Value: s.slug},
+		}, ColorSuccess))
+		return embed, nil
+	}
+
+	embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+		{Name: "**Slug**", Value: local.errorMsg.Input},
+	}, ColorError))
+	return embed, fmt.Errorf("%s", local.errorMsg.Input)
+}
+
+func (s *discordHandler) getRuleMatchesData(i *discordgo.InteractionCreate) []*discordgo.MessageEmbed {
+	args := i.ApplicationCommandData().Options
+	s.cfg.rulesMatches.StandardFormat = int(args[0].IntValue())
+	s.cfg.rulesMatches.FinalsFormat = int(args[1].IntValue())
+	s.cfg.rulesMatches.Stage = args[2].StringValue()
+	s.cfg.rulesMatches.Rounds = int(args[3].IntValue())
+	s.cfg.rulesMatches.Duration = int(args[4].IntValue())
+	s.cfg.rulesMatches.Crossplatform = args[5].BoolValue()
+
+	// Saving values in template msgRuleMatches
+	return []*discordgo.MessageEmbed{s.msgRuleMatches(i.Locale.String(), ColorSystem)}
+}
+
+func (s *discordHandler) getStreamLobbyData(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+	args := i.ApplicationCommandData().Options
+	embed := []*discordgo.MessageEmbed{}
+
+	code := regexp.MustCompile(`[0-9]+`).FindAllString(args[4].StringValue(), -1)[0]
+	if len(code) != 4 {
+		embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+			{Name: local.vdMsg.MessageStreamHeader, Value: local.errorMsg.Input},
+		}, ColorError))
+		return embed, fmt.Errorf("no 4 numbers in field")
+	}
+
+	s.cfg.streamLobby.Area = args[0].StringValue()
+	s.cfg.streamLobby.Language = args[1].StringValue()
+	s.cfg.streamLobby.Conn = args[2].StringValue()
+	s.cfg.streamLobby.Crossplatform = args[3].BoolValue()
+	s.cfg.streamLobby.Passcode = code
+
+	// Saving values in template msgStreamLobby
+	embed = append(embed, s.msgStreamLobby(i.Locale.String(), ColorStream))
+	return embed, nil
+}
+
+func (s *discordHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, local responseLocale) []*discordgo.MessageEmbed {
+	arg := i.ApplicationCommandData().Options[0].StringValue()
+	s.cfg.tournament.Game.Name = arg
+
+	return []*discordgo.MessageEmbed{s.msgEmbed(local.vdMsg.LogoTournament, []*discordgo.MessageEmbedField{
+		{Name: "**Url**", Value: fmt.Sprintf("%v", s.cfg.tournament.Game.Name)},
+	}, ColorSystem)}
+}
+
+func (dh *discordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+	errRespond := func(embed []*discordgo.MessageEmbed) []*discordgo.MessageEmbed {
+		embed = append(embed, dh.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+			{Name: "", Value: local.errorMsg.NoData},
+		}, ColorSystem))
+
+		return embed
+	}
+	embed := []*discordgo.MessageEmbed{}
+
+	cts, err := os.ReadFile("contactsEmbed.json")
+	if err != nil {
+		return errRespond(embed), err
+	}
+	if err := json.Unmarshal(cts, &dh.contacts.embedContacts); err != nil {
+		return errRespond(embed), err
+	}
+
+	arg := i.ApplicationCommandData().Options[0].StringValue()
+	switch strings.ToLower(arg) {
+	case "any", "все":
+		if err := response(s, i, local.responseMsg.InProcess); err != nil {
+			return nil, err
+		}
+		for _, embedContact := range dh.contacts.embedContacts {
+			if _, err := s.ChannelMessageSendEmbed(i.ChannelID, embedContact); err != nil {
+				return errRespond(embed), err
+			}
+		}
+		return nil, nil
+	default:
+		for _, embedContact := range dh.contacts.embedContacts {
+			for _, field := range embedContact.Fields {
+				// If argument from command == name from field which from json file
+				if strings.EqualFold(strings.ToLower(arg), strings.ToLower(field.Name)) {
+					var fields []*discordgo.MessageEmbedField
+					fields = append(fields, &discordgo.MessageEmbedField{
+						Name:  field.Name,
+						Value: field.Value,
+					})
+					embed = append(embed, dh.msgEmbed(local.vdMsg.Title, fields, ColorSystem))
+					return embed, nil
+				}
+			}
+		}
+	}
+	return errRespond(embed), fmt.Errorf("not finded player in json file: %v", arg)
+}

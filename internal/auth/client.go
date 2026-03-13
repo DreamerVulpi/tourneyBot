@@ -52,7 +52,7 @@ func GetStartggOauth2() *oauth2.Config {
 	}
 }
 
-func (_ *AuthClient) GetAccessToken(filename string) (string, error) {
+func (a *AuthClient) GetAccessToken(filename string) (string, error) {
 	token, err := getTokenFromFile(filename)
 	if err != nil {
 		return "", err
@@ -100,7 +100,11 @@ func (ac *AuthClient) Init(ctx context.Context) error {
 
 		mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 			code := r.URL.Query().Get("code")
-			fmt.Fprint(w, "Authurization is success! Back to programm.")
+			_, err := fmt.Fprint(w, "Authurization is success! Back to programm.")
+			if err != nil {
+				log.Printf("auth | Authurization isn't correct: %v\n", err)
+				return
+			}
 			codeChan <- code
 		})
 
@@ -115,24 +119,31 @@ func (ac *AuthClient) Init(ctx context.Context) error {
 		log.Printf("Link to auth: %v", authURL)
 
 		// open browser for os windows
-		exec.Command("rundll32", "url.dll,FileProtocolHandler", authURL).Start()
+		if err := exec.Command("rundll32", "url.dll,FileProtocolHandler", authURL).Start(); err != nil {
+			return err
+		}
 		var code string
 		select {
 		case code = <-codeChan:
 		case <-ctx.Done():
-			server.Shutdown(context.Background())
-			return ctx.Err()
+			if err := server.Shutdown(context.Background()); err != nil {
+				return ctx.Err()
+			}
 		}
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		server.Shutdown(shutdownCtx)
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
 
 		token, err = ac.Config.Exchange(ctx, code)
 		if err != nil {
 			return err
 		}
-		saveTokenToFile(ac.TokenFile, token)
+		if err := saveTokenToFile(ac.TokenFile, token); err != nil {
+			return err
+		}
 	}
 
 	ac.HTTPClient = ac.Config.Client(ctx, token)
@@ -199,12 +210,11 @@ func (ac *AuthClient) GetStartGGMe(ctx context.Context) (*Identity, error) {
 func TestStartGGCall(ac *AuthClient) {
 	ctx := context.Background()
 
-	// Вызываем наш новый унифицированный метод
 	me, err := ac.GetStartGGMe(ctx)
 	if err != nil {
-		log.Fatalf("Ошибка при проверке личности Start.gg: %v", err)
+		log.Fatalf("Failed check user on Start.gg: %v", err)
 	}
 
-	fmt.Printf("Успех! Мы зашли как: %s (ID: %s) на платформе %s\n",
+	fmt.Printf("Success! User: %s (ID: %s) on platform %s\n",
 		me.Username, me.ID, me.Platform)
 }

@@ -8,6 +8,8 @@ type Participant struct {
 	MessengerPlatformId    string    `json:"messengerPlatformId"`
 	MessengerPlatformLogin string    `json:"messengerPlatformLogin"`
 	UpdatedAt              time.Time `json:"updatedAt"`
+	IsFound                bool      `json:"isFound"`
+	Locale                 string    `json:"locale"`
 }
 
 type ParticipantAddRequest struct {
@@ -16,6 +18,8 @@ type ParticipantAddRequest struct {
 	MessengerPlatformId    string    `json:"messengerPlatformId"`
 	MessengerPlatformLogin string    `json:"messengerPlatformLogin"`
 	UpdatedAt              time.Time `json:"updatedAt"`
+	IsFound                bool      `json:"isFound"`
+	Locale                 string    `json:"locale"`
 }
 
 type ParticipantEditRequest struct {
@@ -24,9 +28,19 @@ type ParticipantEditRequest struct {
 	MessenagerPlatformId    string    `json:"messenagerPlatformId"`
 	MessenagerPlatformLogin string    `json:"messenagerPlatformLogin"`
 	UpdatedAt               time.Time `json:"updatedAt"`
+	IsFound                 bool      `json:"isFound"`
+	Locale                  string    `json:"locale"`
 }
 
-type ParticipantDeleteRequest struct{}
+type ParticipantDeleteRequest struct {
+	GamerTag           string `json:"gamerTag"`
+	MessenagerPlatform string `json:"messenagerPlatform"`
+}
+
+type ParticipantGetRequest struct {
+	GamerTag           string `json:"gamerTag"`
+	MessenagerPlatform string `json:"messenagerPlatform"`
+}
 
 type ParticipantAddResponse struct {
 	GamerTag          string `json:"gamerTag"`
@@ -41,4 +55,6 @@ type ParticipantGetResponse struct {
 	MessengerPlatformId    string    `json:"messengerPlatformId"`
 	MessengerPlatformLogin string    `json:"messengerPlatformLogin"`
 	UpdatedAt              time.Time `json:"updatedAt"`
+	IsFound                bool      `json:"isFound"`
+	Locale                 string    `json:"locale"`
 }

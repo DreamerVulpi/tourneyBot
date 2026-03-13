@@ -11,10 +11,19 @@ type SentSetRepo interface {
 	Get(setId int64) (entity.SentSet, error)
 	Del(setId int64) error
 	Edit(setId int64, sentAt time.Time) error
+	Exists(setId int64) (bool, error)
 }
 
 type SentSet struct {
 	Repo SentSetRepo
+}
+
+func (s *SentSet) IsExists(request entity.SentSetCheckRequest) (entity.SentSetCheckResponse, error) {
+	state, err := s.Repo.Exists(request.SetId)
+	if err != nil {
+		return entity.SentSetCheckResponse{}, err
+	}
+	return entity.SentSetCheckResponse{State: state}, nil
 }
 
 func (s *SentSet) AddSentSet(request entity.SentSetAddRequest) (entity.SentSetAddResponse, error) {
@@ -25,13 +34,13 @@ func (s *SentSet) AddSentSet(request entity.SentSetAddRequest) (entity.SentSetAd
 	return entity.SentSetAddResponse{SetId: setId}, nil
 }
 
-func (s *SentSet) EditSentSet(id int64, request entity.SentSetEditRequest) (entity.SentSetEditResponse, error) {
-	_, err := s.Repo.Get(id)
+func (s *SentSet) EditSentSet(request entity.SentSetEditRequest) (entity.SentSetEditResponse, error) {
+	_, err := s.Repo.Get(request.SetId)
 	if err != nil {
 		return entity.SentSetEditResponse{}, err
 	}
 
-	err = s.Repo.Edit(id, request.SentAt)
+	err = s.Repo.Edit(request.SetId, request.SentAt)
 	if err != nil {
 		return entity.SentSetEditResponse{}, err
 	}

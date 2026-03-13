@@ -1,6 +1,14 @@
 package locale
 
 var Ru = Lang{
+	LogMessage: LogMessage{
+		Title:               "Лог турнира**%v**",
+		SuccessfulMsgHeader: "Успешно ✅",
+		FailMsgHeader:       "Провалено ❌",
+		SuccesfullSendedMsg: "Приглашение было отправлено %v",
+		FailedSentMsg:       "Не удалось отправить сообщение %v по причине %v",
+		UsuallyMsgHeader:    "Информация ℹ️",
+	},
 	InviteMessage: InviteMessage{
 		Title:                    "Турнир **%v**",
 		Description:              "Приглашение на турнир со всей необходимой информацией.\n\n*Это сообщение сгенерировано автоматически. Отвечать на него не нужно. В случае вопросов или помощи обращайтесь к помощникам организатора.*",
