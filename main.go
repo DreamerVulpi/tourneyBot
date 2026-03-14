@@ -8,8 +8,8 @@ import (
 
 	"github.com/dreamervulpi/tourneyBot/config"
 	auth "github.com/dreamervulpi/tourneyBot/internal/auth"
+	"github.com/dreamervulpi/tourneyBot/internal/bot/discord"
 	"github.com/dreamervulpi/tourneyBot/internal/db"
-	"github.com/dreamervulpi/tourneyBot/internal/discord/bot"
 	"github.com/joho/godotenv"
 )
 
@@ -53,7 +53,7 @@ func main() {
 		if err != nil {
 			log.Println(errors.New("not loaded: ").Error() + err.Error())
 		} else {
-			if err := bot.Start(stAuth.HTTPClient, dsAuth, pool, cfg, tournament); err != nil {
+			if err := discord.Start(stAuth.HTTPClient, dsAuth, pool, cfg, tournament); err != nil {
 				log.Println(err.Error())
 				// TODO: SAVE LOGS IN TEXT FILE
 			}

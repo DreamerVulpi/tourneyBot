@@ -23,14 +23,14 @@ func (s *SentSet) Exists(setId int64) (bool, error) {
 	return exists, err
 }
 
-func (s *SentSet) Add(setId int64, tournamentPlatform string, messengerPlatform string, tournamentSlug string, sentAt time.Time) (int, error) {
+func (s *SentSet) Add(setId int64, tournamentPlatform string, messengerPlatform string, tournamentSlug string, sentAt time.Time) (int64, error) {
 	const sql = `
 		INSERT INTO sent_sets
 			(set_id, tournament_platform, messenger_platform, tournament_slug, sent_at)
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (set_id, tournament_platform, messenger_platform) DO NOTHING
 		RETURNING set_id`
-	var id int
+	var id int64
 	err := s.Conn.QueryRow(context.Background(), sql, setId, tournamentPlatform, messengerPlatform, tournamentSlug, sentAt).Scan(&id)
 	if err != nil {
 		if err.Error() == "no rows in result set" {

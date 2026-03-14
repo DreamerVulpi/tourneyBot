@@ -10,6 +10,10 @@ type SentSet struct {
 	SentAt             time.Time `json:"sentat"`
 }
 
+type SentSetCheckRequest struct {
+	SetId int64 `json:"setId"`
+}
+
 type SentSetAddRequest struct {
 	SetId              int64     `json:"setId"`
 	TournamentPlatform string    `json:"sourcePlatform"`
@@ -19,6 +23,7 @@ type SentSetAddRequest struct {
 }
 
 type SentSetEditRequest struct {
+	SetId  int64     `json:"setId"`
 	SentAt time.Time `json:"sentat"`
 }
 
@@ -32,6 +37,10 @@ type SentSetGetRequest struct {
 
 type SentSetAddResponse struct {
 	SetId int64 `json:"setId"`
+}
+
+type SentSetCheckResponse struct {
+	State bool `json:"state"`
 }
 
 type SentSetEditResponse struct{}

@@ -8,8 +8,9 @@ import (
 )
 
 type ConfigDiscordBot struct {
-	Token   string `toml:"token"`
-	GuildID string `toml:"guildID"`
+	Token          string `toml:"token"`
+	GuildID        string `toml:"guildID"`
+	DebugChannelID string `toml:"debugChannelID"`
 }
 
 type ConfigGame struct {
@@ -82,6 +83,8 @@ func LoadConfig(file string) (Config, error) {
 		return Config{}, errors.New("discord: token is empty")
 	case len(cfg.Discord.GuildID) == 0:
 		return Config{}, errors.New("discord: guildID is empty")
+	case len(cfg.Discord.DebugChannelID) == 0:
+		return Config{}, errors.New("discord: debugChannelID is empty")
 	case len(cfg.Roles.Ru) == 0:
 		log.Println(errors.New("roles: ru locale is empty").Error())
 		return cfg, nil

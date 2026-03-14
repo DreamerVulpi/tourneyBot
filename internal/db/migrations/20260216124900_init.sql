@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS participants (
     platform_id TEXT NOT NULL,
     platform_login TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_found BOOLEAN NOT NULL,
+    locale TEXT NOT NULL,
     PRIMARY KEY (gamer_tag, platform)
 );
 

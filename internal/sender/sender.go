@@ -5,20 +5,28 @@ import (
 )
 
 type Participant struct {
-	DiscordID    string
-	DiscordLogin string
-	GameNickname string
-	GameID       string
-	Locales      []string
+	MessenagerID    string
+	MessenagerLogin string
+	GameNickname    string
+	GameID          string
+	Locales         []string
 }
 
-type MatchInfo struct {
+type SetData struct {
+	TournamentName string
+	SetID          int64
+	StreamName     string
+	StreamSourse   string
+	RoundNum       int
+	PhaseGroupId   int64
+	Recipient      Participant
+	Opponent       Participant
+	FullInviteLink string
+	IsFinals       bool
+	IsTest         bool
 }
 
-type Sender interface {
-	SendInvite(ctx context.Context, p Participant, match MatchInfo) error
-}
-
-type TournamentPlatform interface {
-	GetActiveMatches(slug string) ([]MatchInfo, error)
+type NotificationSender interface {
+	SendNotification(ctx context.Context, targetID string, data SetData) error
+	GetPlatformMessenagerName() string
 }

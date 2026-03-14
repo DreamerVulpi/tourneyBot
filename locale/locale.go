@@ -1,5 +1,14 @@
 package locale
 
+type LogMessage struct {
+	Title               string
+	SuccessfulMsgHeader string
+	FailMsgHeader       string
+	SuccesfullSendedMsg string
+	FailedSentMsg       string
+	UsuallyMsgHeader    string
+}
+
 type InviteMessage struct {
 	Title                    string
 	Description              string
@@ -73,4 +82,5 @@ type Lang struct {
 	ViewDataMessage    ViewDataMessage
 	ErrorMessage       ErrorMessage
 	ResponseMessage    ResponseMessage
+	LogMessage         LogMessage
 }

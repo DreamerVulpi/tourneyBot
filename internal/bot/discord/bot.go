@@ -1,4 +1,4 @@
-package bot
+package discord
 
 import (
 	"encoding/csv"
@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"errors"
@@ -18,46 +19,80 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/internal/auth"
+	"github.com/dreamervulpi/tourneyBot/internal/db/repo"
+	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
+	"github.com/dreamervulpi/tourneyBot/internal/sender"
 	"github.com/dreamervulpi/tourneyBot/startgg"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type contactData struct {
-	DiscordID    string
-	DiscordLogin string
-	GameID       string
-}
+// type sender.Participant struct {
+// 	MessenagerID    string
+// 	MessenagerLogin string
+// 	GameID          string
+// }
 
 type params struct {
-	guildID      string
-	appID        string
-	logo         string
-	tournament   config.ConfigTournament
-	rulesMatches config.RulesMatches
-	streamLobby  config.StreamLobby
-	rolesIdList  config.ConfigRolesIdDiscord
+	guildID        string
+	appID          string
+	logo           string
+	tournament     config.ConfigTournament
+	rulesMatches   config.RulesMatches
+	streamLobby    config.StreamLobby
+	rolesIdList    config.ConfigRolesIdDiscord
+	debugChannelID string
 }
 
-// Get discord contacts from CSV file
-func loadCSV(nameFile string) (map[string]contactData, error) {
+type preparedContacts struct {
+	contacts      map[string]sender.Participant
+	embedContacts []*discordgo.MessageEmbed
+	tourneyRole   *discordgo.Role
+}
+
+type strtgg struct {
+	client         *startgg.Client
+	finalBracketId int64
+	minRoundNumA   int
+	minRoundNumB   int
+	maxRoundNumA   int
+	maxRoundNumB   int
+}
+
+// TODO: Change startgg on universal
+type discordHandler struct {
+	auth          *auth.AuthClient
+	msgSender     sender.NotificationSender
+	contacts      preparedContacts
+	cancel        context.CancelFunc
+	startgg       strtgg
+	mutex         sync.Mutex
+	sentSetUC     usecase.SentSet
+	participantUC usecase.Participant
+	cfg           params
+	slug          string
+	debugMode     bool
+}
+
+// Get discord contacts from CSV file Startgg
+func loadCSV(nameFile string) (map[string]sender.Participant, error) {
 	if nameFile == "" {
 		return nil, errors.New("loadCSV: filename is empty")
 	}
 
 	f, err := os.Open("config/" + nameFile)
 	if err != nil {
-		return map[string]contactData{}, fmt.Errorf("loadCSV: open file, %v", err)
+		return map[string]sender.Participant{}, fmt.Errorf("loadCSV: open file, %v", err)
 	}
 	defer f.Close() //nolint:errcheck
 
 	csvReader := csv.NewReader(f)
 	records, err := csvReader.ReadAll()
 	if err != nil {
-		return map[string]contactData{}, fmt.Errorf("loadCSV: read CSV, %v", err)
+		return map[string]sender.Participant{}, fmt.Errorf("loadCSV: read CSV, %v", err)
 	}
 
 	if len(records) == 0 {
-		return map[string]contactData{}, nil
+		return map[string]sender.Participant{}, nil
 	}
 
 	// Search index for get data
@@ -74,7 +109,7 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 		}
 	}
 
-	contacts := make(map[string]contactData, len(records)-1)
+	contacts := make(map[string]sender.Participant, len(records)-1)
 	for i := 1; i < len(records); i++ {
 		attendee := records[i]
 
@@ -91,11 +126,17 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 			}
 		}
 
+		gameNickname := "N/D"
+		if val := attendee[idxGamerTagColumn]; val != "" {
+			gameNickname = val
+		}
+
 		key := attendee[idxGamerTagColumn]
 		if key != "" {
-			contacts[strings.ToLower(key)] = contactData{
-				DiscordLogin: discordID,
-				GameID:       gameID,
+			contacts[key] = sender.Participant{
+				MessenagerLogin: discordID,
+				GameID:          gameID,
+				GameNickname:    gameNickname,
 			}
 		}
 	}
@@ -103,12 +144,12 @@ func loadCSV(nameFile string) (map[string]contactData, error) {
 	return contacts, nil
 }
 
-func (ch *commandHandler) getDiscordContacts(ctx context.Context, s *discordgo.Session) {
+func (dh *discordHandler) getDiscordContacts(ctx context.Context, s *discordgo.Session) {
 	sliceMessages := []*discordgo.MessageEmbed{}
 	fields := []*discordgo.MessageEmbedField{}
 
-	for nickname, dc := range ch.discord.contacts {
-		usr, err := ch.searchContactDiscord(ctx, s, nickname)
+	for nickname, dc := range dh.contacts.contacts {
+		usr, err := dh.searchContactDiscord(ctx, s, dc.MessenagerLogin, nickname)
 		time.Sleep(1 * time.Second)
 		field := &discordgo.MessageEmbedField{
 			Name:   nickname,
@@ -116,56 +157,62 @@ func (ch *commandHandler) getDiscordContacts(ctx context.Context, s *discordgo.S
 		}
 
 		if err != nil {
-			field.Value = fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.DiscordLogin, dc.GameID)
+			field.Value = fmt.Sprintf("__Discord:__\n```%v```__GameID:__\n```%v```", dc.MessenagerLogin, dc.GameID)
 		} else {
-			field.Value = fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.DiscordID, dc.GameID)
+			field.Value = fmt.Sprintf("__Discord:__\n<@%v>\n__GameID:__\n```%v```", usr.MessenagerID, dc.GameID)
 		}
 
 		fields = append(fields, field)
 
 		if len(fields) == 25 {
-			sliceMessages = append(sliceMessages, ch.msgEmbed("", fields, ColorSystem))
+			sliceMessages = append(sliceMessages, dh.msgEmbed("", fields, ColorSystem))
 			fields = []*discordgo.MessageEmbedField{}
 		}
 	}
 
 	if len(fields) > 0 {
-		sliceMessages = append(sliceMessages, ch.msgEmbed("", fields, ColorSystem))
+		sliceMessages = append(sliceMessages, dh.msgEmbed("", fields, ColorSystem))
 	}
 
-	ch.discord.embedContacts = sliceMessages
+	dh.contacts.embedContacts = sliceMessages
 }
 
 // Search users in server (Guild) discord from CSV file
-func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Session) error {
+func (dh *discordHandler) prepareContacts(ctx context.Context, s *discordgo.Session) error {
 	contacts, err := os.ReadFile("contacts.json")
 	if err != nil {
 		log.Println("Prepare contacts from CSV...")
-		for nickname, dc := range ch.discord.contacts {
+		for nickname, dc := range dh.contacts.contacts {
 			time.Sleep(1 * time.Second)
-			usr, err := ch.searchContactDiscord(ctx, s, nickname)
+			contact := sender.Participant{
+				MessenagerID:    "N/D",
+				MessenagerLogin: dc.MessenagerLogin,
+				GameID:          dc.GameID,
+				GameNickname:    dc.GameNickname,
+			}
+
+			usr, err := dh.searchContactDiscord(ctx, s, dc.MessenagerLogin, nickname)
 			if err != nil {
-				ch.discord.contacts[nickname] = contactData{
-					DiscordID:    "N/D",
-					DiscordLogin: dc.DiscordLogin,
-					GameID:       dc.GameID,
-				}
+				dh.contacts.contacts[nickname] = contact
 				log.Printf("can't find player: %v\n error: %v\n", nickname, err.Error())
 				continue
 			}
-			ch.discord.contacts[nickname] = contactData{
-				DiscordID:    usr.DiscordID,
-				DiscordLogin: dc.DiscordLogin,
-				GameID:       dc.GameID,
-			}
+			contact.MessenagerID = usr.MessenagerID
+			dh.contacts.contacts[nickname] = contact
+
 			time.Sleep(1 * time.Second)
-			err = s.GuildMemberRoleAdd(ch.cfg.guildID, usr.DiscordID, ch.discord.tourneyRole.ID)
-			if err != nil {
-				log.Println(err.Error())
+			if usr.MessenagerID != "000000000000000000" && usr.MessenagerID != "N/D" {
+				err = s.GuildMemberRoleAdd(dh.cfg.guildID, usr.MessenagerID, dh.contacts.tourneyRole.ID)
+				if err != nil {
+					log.Printf("prepareContacts | discord API Error (RoleAdd) for %v: %v", nickname, err)
+					continue
+				}
+			} else {
+				log.Printf("prepareContacts | skip roleAdd for %v: user not on server (Mock ID used)\n", nickname)
 			}
 		}
 
-		file, err := json.MarshalIndent(ch.discord.contacts, "", " ")
+		file, err := json.MarshalIndent(dh.contacts.contacts, "", " ")
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -177,7 +224,7 @@ func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 
 		log.Println("Done!")
 	} else {
-		err := json.Unmarshal(contacts, &ch.discord.contacts)
+		err := json.Unmarshal(contacts, &dh.contacts.contacts)
 		if err != nil {
 			return err
 		}
@@ -187,12 +234,12 @@ func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 
 	contactsEmbed, err := os.ReadFile("contactsEmbed.json")
 	if err != nil {
-		if len(ch.discord.contacts) != 0 {
+		if len(dh.contacts.contacts) != 0 {
 			log.Println("Generate contact.json file...")
 
-			ch.getDiscordContacts(ctx, s)
+			dh.getDiscordContacts(ctx, s)
 
-			file, err := json.MarshalIndent(ch.discord.embedContacts, "", " ")
+			file, err := json.MarshalIndent(dh.contacts.embedContacts, "", " ")
 			if err != nil {
 				return err
 			}
@@ -205,7 +252,7 @@ func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 			log.Println("Error: List discord contacts is empty")
 		}
 	} else {
-		err := json.Unmarshal(contactsEmbed, &ch.discord.embedContacts)
+		err := json.Unmarshal(contactsEmbed, &dh.contacts.embedContacts)
 		if err != nil {
 			return err
 		}
@@ -214,8 +261,8 @@ func (ch *commandHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 	return nil
 }
 
-func (ch *commandHandler) createTourneyRole(session *discordgo.Session) error {
-	rolesServer, err := session.GuildRoles(ch.cfg.guildID)
+func (s *discordHandler) createTourneyRole(session *discordgo.Session) error {
+	rolesServer, err := session.GuildRoles(s.cfg.guildID)
 	if err != nil {
 		return err
 	}
@@ -226,8 +273,8 @@ func (ch *commandHandler) createTourneyRole(session *discordgo.Session) error {
 	for _, r := range rolesServer {
 		if r.Name == "Tourney Role" {
 			checker = true
-			ch.discord.tourneyRole = r
-			log.Println("Finded role in server! Saved to program.")
+			s.contacts.tourneyRole = r
+			log.Println("createTourneyRole | Finded role in server! Saved to program")
 		}
 	}
 
@@ -237,7 +284,7 @@ func (ch *commandHandler) createTourneyRole(session *discordgo.Session) error {
 		mentionable := true
 		var prms int64 = 0x0000000000000800 | 0x0000000000000400
 
-		rslt, err := session.GuildRoleCreate(ch.cfg.guildID, &discordgo.RoleParams{
+		rslt, err := session.GuildRoleCreate(s.cfg.guildID, &discordgo.RoleParams{
 			Name:        "Tourney Role",
 			Color:       &color,
 			Hoist:       &hoist,
@@ -249,7 +296,7 @@ func (ch *commandHandler) createTourneyRole(session *discordgo.Session) error {
 			log.Println(err.Error())
 		}
 
-		ch.discord.tourneyRole = rslt
+		s.contacts.tourneyRole = rslt
 
 		log.Println("Tourney role successfuly created in server!")
 	}
@@ -257,8 +304,8 @@ func (ch *commandHandler) createTourneyRole(session *discordgo.Session) error {
 	return nil
 }
 
-func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
-	rolesServer, err := session.GuildRoles(ch.cfg.guildID)
+func (s *discordHandler) deleteTourneyRole(session *discordgo.Session) error {
+	rolesServer, err := session.GuildRoles(s.cfg.guildID)
 	if err != nil {
 		return err
 	}
@@ -266,7 +313,7 @@ func (ch *commandHandler) deleteTourneyRole(session *discordgo.Session) error {
 	// check available role in guild (server) discord
 	for _, r := range rolesServer {
 		if r.Name == "Tourney Role" {
-			err := session.GuildRoleDelete(ch.cfg.guildID, r.ID)
+			err := session.GuildRoleDelete(s.cfg.guildID, r.ID)
 			if err != nil {
 				return err
 			}
@@ -290,7 +337,8 @@ func Start(stClient *http.Client, dsAuth *auth.AuthClient, pool *pgxpool.Pool, c
 	}
 
 	appID := dsAuth.Config.ClientID
-	cfgCmdHadnler := params{
+
+	configTournament := params{
 		guildID:    cfg.Discord.GuildID,
 		appID:      appID,
 		tournament: tournament,
@@ -310,19 +358,36 @@ func Start(stClient *http.Client, dsAuth *auth.AuthClient, pool *pgxpool.Pool, c
 			Conn:          tournament.Stream.Conn,
 			Passcode:      tournament.Stream.Passcode,
 		},
-		rolesIdList: cfg.Roles,
-		// TODO: Change Link to Logo
-		logo: "https://i.imgur.com/n9SG5IL.png",
+		rolesIdList:    cfg.Roles,
+		logo:           "https://i.imgur.com/n9SG5IL.png",
+		debugChannelID: cfg.Discord.DebugChannelID,
 	}
 
+	sentSetUsecase := usecase.SentSet{Repo: &repo.SentSet{Conn: pool}}
+	participantsUsecase := usecase.Participant{Repo: &repo.Participants{Conn: pool}}
+
 	startggClient := startgg.NewClient(stClient)
-	cmdHandler := commandHandler{
+
+	dsSender := &DiscordSender{
+		session: session,
+		config:  configTournament,
+		// TODO: Delete
 		startgg: strtgg{
 			client: startggClient,
 		},
-		auth:      dsAuth,
-		cfg:       cfgCmdHadnler,
-		debugMode: cfg.DebugMode.Mode,
+		debugChannelID: cfg.Discord.DebugChannelID,
+	}
+
+	cmdHandler := discordHandler{
+		startgg: strtgg{
+			client: startggClient,
+		},
+		auth:          dsAuth,
+		cfg:           configTournament,
+		msgSender:     dsSender,
+		sentSetUC:     sentSetUsecase,
+		participantUC: participantsUsecase,
+		debugMode:     cfg.DebugMode.Mode,
 	}
 
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
@@ -336,7 +401,7 @@ func Start(stClient *http.Client, dsAuth *auth.AuthClient, pool *pgxpool.Pool, c
 
 	var trigger bool
 	discordContacts, err := loadCSV(tournament.Csv.NameFile)
-	cmdHandler.discord.contacts = discordContacts
+	cmdHandler.contacts.contacts = discordContacts
 	if err != nil {
 		log.Println("CSV file isn't loaded. Commands: contacts and roles unavailable. Autofill empty data unavailable.")
 		trigger = true

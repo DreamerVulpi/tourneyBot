@@ -1,17 +1,17 @@
-package bot
+package discord
 
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
 )
 
-func (ch *commandHandler) commands() []*discordgo.ApplicationCommand {
+func (s *discordHandler) commands() []*discordgo.ApplicationCommand {
 	dmPermission := false
 	var stages []*discordgo.ApplicationCommandOptionChoice
-	if ch.cfg.tournament.Game.Name == "tekken" {
+	if s.cfg.tournament.Game.Name == "tekken" {
 		stages = choice(config.T8Stages)
 	}
-	if ch.cfg.tournament.Game.Name == "sf6" {
+	if s.cfg.tournament.Game.Name == "sf6" {
 		stages = choice(config.SF6Stages)
 	}
 
