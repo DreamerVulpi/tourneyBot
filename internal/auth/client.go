@@ -19,11 +19,14 @@ import (
 )
 
 const (
-	addr            = "127.0.0.1:7310"
-	startggAuthURL  = "https://start.gg/oauth/authorize"
-	startggTokenURL = "https://api.start.gg/oauth/access_token"
-	discordAuthURL  = "https://discord.com/api/oauth2/authorize"
-	discordTokenURL = "https://discord.com/api/oauth2/token"
+	addr              = "127.0.0.1:7310"
+	startggAuthURL    = "https://start.gg/oauth/authorize"
+	startggTokenURL   = "https://api.start.gg/oauth/access_token"
+	discordAuthURL    = "https://discord.com/api/oauth2/authorize"
+	discordTokenURL   = "https://discord.com/api/oauth2/token"
+	challongeAuthURL  = "https://api.challonge.com/oauth/authorize"
+	challongeTokenURL = "https://api.challonge.com/oauth/token"
+	challongeUserURL  = "https://api.challonge.com/v2/me.json"
 )
 
 type Identity struct {
@@ -70,6 +73,19 @@ func GetDiscordOauth2() *oauth2.Config {
 			TokenURL: discordTokenURL,
 		},
 		Scopes: []string{"identify"},
+	}
+}
+
+func GetChallongeOauth2() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     os.Getenv("CHALLONGE_CLIENT_ID"),
+		ClientSecret: os.Getenv("CHALLONGE_CLIENT_SECRET"),
+		RedirectURL:  "http://127.0.0.1:7310/callback",
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  challongeAuthURL,
+			TokenURL: challongeTokenURL,
+		},
+		Scopes: []string{"me", "tournaments:read", "participants:read", "matches:read"},
 	}
 }
 
@@ -172,6 +188,48 @@ func (ac *AuthClient) GetDiscordMe(ctx context.Context) (*Identity, error) {
 	return &Identity{ID: data.ID, Username: data.Username, Platform: "discord"}, nil
 }
 
+func (ac *AuthClient) GetChallongeMe(ctx context.Context) (*Identity, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", challongeUserURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+	req.Header.Set("Accept", "application/json")
+
+	req.Header.Set("Authorization", "Bearer OauthTokenGoesInPlaceOfThis")
+	req.Header.Set("Authorization-Type", "v2")
+
+	resp, err := ac.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("getChallongeMe | challonge API error: status %d", resp.StatusCode)
+	}
+
+	var response struct {
+		Data struct {
+			ID         string `json:"id"`
+			Attributes struct {
+				Username string `json:"username"`
+			} `json:"attributes"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	return &Identity{
+		ID:       response.Data.ID,
+		Username: response.Data.Attributes.Username,
+		Platform: "challonge",
+	}, nil
+}
+
 func (ac *AuthClient) GetStartGGMe(ctx context.Context) (*Identity, error) {
 	query := `{"query": "query { currentUser { id name } }"}`
 
@@ -213,6 +271,18 @@ func TestStartGGCall(ac *AuthClient) {
 	me, err := ac.GetStartGGMe(ctx)
 	if err != nil {
 		log.Fatalf("Failed check user on Start.gg: %v", err)
+	}
+
+	fmt.Printf("Success! User: %s (ID: %s) on platform %s\n",
+		me.Username, me.ID, me.Platform)
+}
+
+func TestChallongeCall(ac *AuthClient) {
+	ctx := context.Background()
+
+	me, err := ac.GetChallongeMe(ctx)
+	if err != nil {
+		log.Fatalf("Failed check user on Challonge: %v", err)
 	}
 
 	fmt.Printf("Success! User: %s (ID: %s) on platform %s\n",

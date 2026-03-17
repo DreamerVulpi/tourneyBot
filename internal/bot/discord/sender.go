@@ -369,6 +369,7 @@ func (dh *discordHandler) Process(s *discordgo.Session) {
 // 	}
 // }
 
+// REFACTOR: Вынести в отдельно
 func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Session) error {
 	if dh.auth == nil {
 		return errors.New("sendingMessages: auth client is not initialized - check bot.Start parameters")
