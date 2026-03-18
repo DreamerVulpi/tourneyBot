@@ -46,7 +46,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17340928,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "Pizzduk",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -68,7 +68,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17299461,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "Mr_Shadow_",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -96,7 +96,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17340928,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "Pizzduk",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -118,7 +118,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17373189,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "cleverdemon",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -142,7 +142,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17327065,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "AlexSouls",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -164,7 +164,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17373189,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "cleverdemon",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -188,7 +188,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17373189,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "cleverdemon",
 												ConnectedAccounts: startgg.ConnectedAccounts{
@@ -204,7 +204,7 @@ func TestGetData(t *testing.T) {
 								{
 									Entrant: startgg.Entrant{
 										Id: 17340928,
-										Participants: []startgg.Participants{
+										Participants: []startgg.Participant{
 											{
 												GamerTag: "Pizzduk",
 												ConnectedAccounts: startgg.ConnectedAccounts{

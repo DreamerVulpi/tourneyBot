@@ -19,6 +19,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/internal/auth"
+	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
 	"github.com/dreamervulpi/tourneyBot/internal/db/repo"
 	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
 	"github.com/dreamervulpi/tourneyBot/internal/sender"
@@ -142,6 +143,98 @@ func loadCSV(nameFile string) (map[string]sender.Participant, error) {
 	}
 
 	return contacts, nil
+}
+
+func (dh *discordHandler) searchContactDiscord(ctx context.Context, s *discordgo.Session, platformNickname string, gameNickname string) (sender.Participant, error) {
+	if err := ctx.Err(); err != nil {
+		return sender.Participant{}, err
+	}
+
+	if platformNickname == "" || platformNickname == "N/D" {
+		return sender.Participant{}, fmt.Errorf("searchContactDiscord: empty platformNickname %v", platformNickname)
+	}
+
+	cleanNickname := strings.Split(platformNickname, "#")[0]
+
+	if err := ctx.Err(); err != nil {
+		return sender.Participant{}, err
+	}
+
+	request := entity.ParticipantGetRequest{
+		GamerTag:           gameNickname,
+		MessenagerPlatform: dh.msgSender.GetPlatformMessenagerName(),
+	}
+
+	response, err := dh.participantUC.GetParticipant(request)
+	if err != nil {
+		log.Printf("db | not finded player %v from %v in database", request.GamerTag, request.MessenagerPlatform)
+
+		if err := ctx.Err(); err != nil {
+			return sender.Participant{}, err
+		}
+
+		var mpi string
+		locale := "N/D"
+
+		members, err := s.GuildMembersSearch(dh.cfg.guildID, cleanNickname, 1)
+		if (err != nil || len(members) != 1) && !dh.debugMode {
+			return sender.Participant{}, fmt.Errorf("searchContactDiscord: player not finded %v", cleanNickname)
+		}
+
+		if (err != nil || len(members) != 1) && dh.debugMode {
+			log.Printf("searchContactDiscord: member %v not found on DiscordServer, using mock data", cleanNickname)
+			mpi = "000000000000000000"
+			locale = dh.cfg.rolesIdList.Ru
+		} else {
+			targetMember := members[0]
+			// Get list rolesId including in locale (en is default)
+			mpi = targetMember.User.ID
+			for _, roleId := range targetMember.Roles {
+				// TODO: Нужно поменять логику локали. Если их несколько??
+				if roleId == dh.cfg.rolesIdList.Ru {
+					locale = roleId
+				}
+			}
+		}
+
+		if len(mpi) == 0 {
+			mpi = "N/D"
+		}
+
+		addRequest := entity.ParticipantAddRequest{
+			GamerTag:               gameNickname,
+			MessengerPlatform:      dh.msgSender.GetPlatformMessenagerName(),
+			MessengerPlatformId:    mpi,
+			MessengerPlatformLogin: cleanNickname,
+			IsFound:                true,
+			UpdatedAt:              time.Now(),
+			Locale:                 locale,
+		}
+
+		if err := ctx.Err(); err != nil {
+			return sender.Participant{}, err
+		}
+
+		_, err = dh.participantUC.AddParticipant(addRequest)
+		if err != nil {
+			log.Printf("db | failed to save participant %v: %v", cleanNickname, err)
+			return sender.Participant{}, err
+		}
+
+		log.Printf("db | successfully saved participant %v", cleanNickname)
+		return sender.Participant{
+			MessenagerID:    addRequest.MessengerPlatformId,
+			MessenagerLogin: addRequest.GamerTag,
+			Locales:         []string{addRequest.Locale},
+		}, nil
+
+	}
+
+	return sender.Participant{
+		MessenagerID:    response.MessengerPlatformId,
+		MessenagerLogin: response.GamerTag,
+		Locales:         []string{response.Locale},
+	}, nil
 }
 
 func (dh *discordHandler) getDiscordContacts(ctx context.Context, s *discordgo.Session) {
@@ -370,12 +463,13 @@ func Start(stClient *http.Client, dsAuth *auth.AuthClient, pool *pgxpool.Pool, c
 
 	dsSender := &DiscordSender{
 		session: session,
-		config:  configTournament,
+		cfg:     configTournament,
 		// TODO: Delete
 		startgg: strtgg{
 			client: startggClient,
 		},
-		debugChannelID: cfg.Discord.DebugChannelID,
+		participantUC: participantsUsecase,
+		debugMode:     cfg.DebugMode.Mode,
 	}
 
 	cmdHandler := discordHandler{

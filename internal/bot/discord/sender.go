@@ -14,24 +14,26 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
+	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
 	"github.com/dreamervulpi/tourneyBot/internal/sender"
 	"github.com/dreamervulpi/tourneyBot/locale"
 	"github.com/dreamervulpi/tourneyBot/startgg"
 )
 
 type DiscordSender struct {
-	session *discordgo.Session
-	config  params
+	session       *discordgo.Session
+	cfg           params
+	participantUC usecase.Participant
 	// TODO: Change startgg on universal
-	startgg        strtgg
-	debugChannelID string
+	startgg   strtgg
+	debugMode bool
 }
 
 func (s *DiscordSender) prepareSetData(set sender.SetData, local locale.Lang, link string) (*discordgo.MessageEmbed, error) {
-	format := s.config.rulesMatches.StandardFormat
+	format := s.cfg.rulesMatches.StandardFormat
 	if s.startgg.finalBracketId == set.PhaseGroupId {
 		if s.startgg.minRoundNumA <= set.RoundNum && set.RoundNum <= s.startgg.minRoundNumB || s.startgg.maxRoundNumA <= set.RoundNum && set.RoundNum <= s.startgg.maxRoundNumB {
-			format = s.config.rulesMatches.FinalsFormat
+			format = s.cfg.rulesMatches.FinalsFormat
 		}
 	}
 
@@ -71,13 +73,13 @@ func (s *DiscordSender) prepareSetData(set sender.SetData, local locale.Lang, li
 			{Name: local.InviteMessage.Discord, Value: discordDisplay, Inline: true},
 
 			{Name: local.InviteMessage.CheckIn, Value: link},
-			{Name: fmt.Sprintf(local.InviteMessage.Warning, s.config.rulesMatches.Waiting), Value: "\u200B"},
+			{Name: fmt.Sprintf(local.InviteMessage.Warning, s.cfg.rulesMatches.Waiting), Value: "\u200B"},
 
 			{Name: local.InviteMessage.SettingsHeader},
 			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
 			{Name: local.InviteMessage.Stage, Value: s.fieldStage(local), Inline: true},
-			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", s.config.rulesMatches.Rounds), Inline: true},
-			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, s.config.rulesMatches.Duration), Inline: true},
+			{Name: local.InviteMessage.Rounds, Value: fmt.Sprintf("%v", s.cfg.rulesMatches.Rounds), Inline: true},
+			{Name: local.InviteMessage.Duration, Value: fmt.Sprintf(local.InviteMessage.DurationCount, s.cfg.rulesMatches.Duration), Inline: true},
 			{Name: local.InviteMessage.Crossplatform, Value: s.fieldCrossplay(local), Inline: true},
 		}
 		message = s.templateEmbedMsg(fmt.Sprintf(local.InviteMessage.Title, set.TournamentName), fields, embedColor)
@@ -93,7 +95,7 @@ func (s *DiscordSender) prepareSetData(set sender.SetData, local locale.Lang, li
 		fields := []*discordgo.MessageEmbedField{
 			{Name: local.StreamLobbyMessage.StreamLink, Value: stream},
 			{Name: local.StreamLobbyMessage.MessageHeader, Value: link},
-			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, s.config.rulesMatches.Waiting), Value: "\u200B"},
+			{Name: fmt.Sprintf(local.StreamLobbyMessage.Warning, s.cfg.rulesMatches.Waiting), Value: "\u200B"},
 
 			{Name: local.StreamLobbyMessage.ParamsHeader},
 			{Name: local.InviteMessage.StandardFormat, Value: fmt.Sprintf(local.InviteMessage.FT, format) + fmt.Sprintf(local.InviteMessage.FormatDescription, format), Inline: true},
@@ -101,7 +103,7 @@ func (s *DiscordSender) prepareSetData(set sender.SetData, local locale.Lang, li
 			{Name: local.StreamLobbyMessage.Language, Value: s.fieldLanguage(local), Inline: true},
 			{Name: local.StreamLobbyMessage.TypeConnection, Value: s.fieldConnection(local), Inline: true},
 			{Name: local.StreamLobbyMessage.Crossplatform, Value: s.fieldCrossplay(local), Inline: true},
-			{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, s.config.streamLobby.Passcode), Inline: true},
+			{Name: local.StreamLobbyMessage.Passcode, Value: fmt.Sprintf(local.StreamLobbyMessage.PasscodeTemplate, s.cfg.streamLobby.Passcode), Inline: true},
 		}
 		message = s.templateEmbedMsg(fmt.Sprintf(local.StreamLobbyMessage.Title, set.TournamentName), fields, embedColor)
 		message.Description = local.StreamLobbyMessage.Description
@@ -111,7 +113,7 @@ func (s *DiscordSender) prepareSetData(set sender.SetData, local locale.Lang, li
 
 func (s *DiscordSender) msgInvite(set sender.SetData, channel *discordgo.Channel, link string, roleId string) {
 	var local locale.Lang
-	if roleId == s.config.rolesIdList.Ru {
+	if roleId == s.cfg.rolesIdList.Ru {
 		local = locale.Ru
 	} else {
 		local = locale.En
@@ -125,7 +127,7 @@ func (s *DiscordSender) msgInvite(set sender.SetData, channel *discordgo.Channel
 			{Name: fmt.Sprintf(local.LogMessage.FailedSentMsg, set.Recipient.MessenagerLogin), Value: "\u200B"},
 		}
 		failedLog := s.templateEmbedMsg(fmt.Sprintf(local.LogMessage.Title, set.TournamentName), failMsg, ColorError)
-		if _, err := s.session.ChannelMessageSendEmbed(s.config.debugChannelID, failedLog); err != nil {
+		if _, err := s.session.ChannelMessageSendEmbed(s.cfg.debugChannelID, failedLog); err != nil {
 			log.Printf("msgInvite | error sending to debugChannel: %v\n", err.Error())
 		}
 		return
@@ -139,7 +141,7 @@ func (s *DiscordSender) msgInvite(set sender.SetData, channel *discordgo.Channel
 			{Name: fmt.Sprintf(local.LogMessage.FailedSentMsg, set.Recipient.MessenagerLogin), Value: "\u200B"},
 		}
 		failedLog := s.templateEmbedMsg(fmt.Sprintf(local.LogMessage.Title, set.TournamentName), failMsg, ColorError)
-		if _, err := s.session.ChannelMessageSendEmbed(s.config.debugChannelID, failedLog); err != nil {
+		if _, err := s.session.ChannelMessageSendEmbed(s.cfg.debugChannelID, failedLog); err != nil {
 			log.Printf("msgInvite | error sending to debugChannel: %v\n", err.Error())
 		}
 	}
@@ -149,7 +151,7 @@ func (s *DiscordSender) msgInvite(set sender.SetData, channel *discordgo.Channel
 		{Name: fmt.Sprintf(local.LogMessage.SuccesfullSendedMsg, set.Recipient.MessenagerLogin), Value: "\u200B"},
 	}
 	successLog := s.templateEmbedMsg(fmt.Sprintf(local.LogMessage.Title, set.TournamentName), successMsg, ColorSuccess)
-	if _, err := s.session.ChannelMessageSendEmbed(s.config.debugChannelID, successLog); err != nil {
+	if _, err := s.session.ChannelMessageSendEmbed(s.cfg.debugChannelID, successLog); err != nil {
 		log.Printf("msgInvite | error sending to debugChannel: %v\n", err.Error())
 		return
 	}
@@ -179,111 +181,104 @@ func (s *DiscordSender) GetPlatformMessenagerName() string {
 	return "discord"
 }
 
-func (dh *discordHandler) searchContactDiscord(ctx context.Context, s *discordgo.Session, platformNickname string, gameNickname string) (sender.Participant, error) {
+func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.Participant) (sender.Participant, error) {
 	if err := ctx.Err(); err != nil {
 		return sender.Participant{}, err
 	}
 
-	if platformNickname == "" || platformNickname == "N/D" {
-		return sender.Participant{}, fmt.Errorf("searchContactDiscord: empty platformNickname %v", platformNickname)
-	}
-
-	cleanNickname := strings.Split(platformNickname, "#")[0]
-
-	if err := ctx.Err(); err != nil {
-		return sender.Participant{}, err
+	if p.MessenagerLogin == "" || p.MessenagerLogin == "N/D" {
+		return sender.Participant{}, fmt.Errorf("findContact | empty platform login for %v\n", p.GameNickname)
 	}
 
 	request := entity.ParticipantGetRequest{
-		GamerTag:           gameNickname,
-		MessenagerPlatform: dh.msgSender.GetPlatformMessenagerName(),
+		GamerTag:           p.GameNickname,
+		MessenagerPlatform: s.GetPlatformMessenagerName(),
 	}
 
-	response, err := dh.participantUC.GetParticipant(request)
-	if err != nil {
-		log.Printf("db | not finded player %v from %v in database", request.GamerTag, request.MessenagerPlatform)
+	response, err := s.participantUC.GetParticipant(request)
+	if err == nil {
+		return sender.Participant{
+			MessenagerID:    response.MessengerPlatformId,
+			MessenagerLogin: p.MessenagerLogin,
+			MessenagerName:  s.GetPlatformMessenagerName(),
+			GameNickname:    p.GameNickname,
+			GameID:          p.GameID,
+			Locales:         []string{response.Locale},
+		}, nil
+	}
+	log.Printf("db | participant %s not found, searching in Discord...", p.GameNickname)
 
-		if err := ctx.Err(); err != nil {
-			return sender.Participant{}, err
-		}
+	cleanNickname := s.cleanDiscordLogin(p.MessenagerLogin)
+	var messengerID string
+	locale := "default"
 
-		var mpi string
-		locale := "N/D"
-
-		members, err := s.GuildMembersSearch(dh.cfg.guildID, cleanNickname, 1)
-		if (err != nil || len(members) != 1) && !dh.debugMode {
-			return sender.Participant{}, fmt.Errorf("searchContactDiscord: player not finded %v", cleanNickname)
-		}
-
-		if (err != nil || len(members) != 1) && dh.debugMode {
-			log.Printf("searchContactDiscord: member %v not found on DiscordServer, using mock data", cleanNickname)
-			mpi = "000000000000000000"
-			locale = dh.cfg.rolesIdList.Ru
+	members, err := s.session.GuildMembersSearch(s.cfg.guildID, cleanNickname, 1)
+	if err != nil || len(members) != 1 {
+		if s.debugMode {
+			log.Printf("search: %s not found, using mock data (debug)\n", cleanNickname)
+			messengerID = "000000000000000000"
+			locale = s.cfg.rolesIdList.Ru
 		} else {
-			targetMember := members[0]
-			// Get list rolesId including in locale (en is default)
-			mpi = targetMember.User.ID
-			for _, roleId := range targetMember.Roles {
-				// TODO: Нужно поменять логику локали. Если их несколько??
-				if roleId == dh.cfg.rolesIdList.Ru {
-					locale = roleId
-				}
+			return sender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
+		}
+	} else {
+		targetMember := members[0]
+		messengerID = targetMember.User.ID
+
+		for _, roleId := range targetMember.Roles {
+			// TODO: Нужно поменять логику локали. Если их несколько??
+			if roleId == s.cfg.rolesIdList.Ru {
+				locale = roleId
 			}
 		}
-
-		if len(mpi) == 0 {
-			mpi = "N/D"
-		}
-
-		addRequest := entity.ParticipantAddRequest{
-			GamerTag:               gameNickname,
-			MessengerPlatform:      dh.msgSender.GetPlatformMessenagerName(),
-			MessengerPlatformId:    mpi,
-			MessengerPlatformLogin: cleanNickname,
-			IsFound:                true,
-			UpdatedAt:              time.Now(),
-			Locale:                 locale,
-		}
-
-		if err := ctx.Err(); err != nil {
-			return sender.Participant{}, err
-		}
-
-		_, err = dh.participantUC.AddParticipant(addRequest)
-		if err != nil {
-			log.Printf("db | failed to save participant %v: %v", cleanNickname, err)
-			return sender.Participant{}, err
-		}
-
-		log.Printf("db | successfully saved participant %v", cleanNickname)
-		return sender.Participant{
-			MessenagerID:    addRequest.MessengerPlatformId,
-			MessenagerLogin: addRequest.GamerTag,
-			Locales:         []string{addRequest.Locale},
-		}, nil
-
 	}
 
+	addRequest := entity.ParticipantAddRequest{
+		GamerTag:               p.GameNickname,
+		MessengerPlatform:      s.GetPlatformMessenagerName(),
+		MessengerPlatformId:    messengerID,
+		MessengerPlatformLogin: cleanNickname,
+		IsFound:                true,
+		UpdatedAt:              time.Now(),
+		Locale:                 locale,
+	}
+
+	_, err = s.participantUC.AddParticipant(addRequest)
+	if err != nil {
+		log.Printf("db | failed to save participant %v: %v", cleanNickname, err)
+		return sender.Participant{}, err
+	}
+
+	log.Printf("db | successfully saved participant %v", cleanNickname)
+
 	return sender.Participant{
-		MessenagerID:    response.MessengerPlatformId,
-		MessenagerLogin: response.GamerTag,
-		Locales:         []string{response.Locale},
+		MessenagerID:    addRequest.MessengerPlatformId,
+		MessenagerLogin: addRequest.GamerTag,
+		MessenagerName:  s.GetPlatformMessenagerName(),
+		GameNickname:    p.GameNickname,
+		GameID:          p.GameID,
+		Locales:         []string{addRequest.Locale},
 	}, nil
 }
 
-func (s *discordHandler) checkContact(participants []startgg.Participants) sender.Participant {
+func (s *DiscordSender) cleanDiscordLogin(login string) string {
+	res := strings.ReplaceAll(login, "@", "")
+	if strings.Contains(res, "#") {
+		return strings.Split(res, "#")[0]
+	}
+	return res
+}
+
+// REFACTOR:
+func (s *discordHandler) checkContact(participant startgg.Participant) sender.Participant {
 	p := sender.Participant{
 		MessenagerLogin: "N/D",
 		GameID:          "N/D",
 		GameNickname:    "N/D",
 	}
 
-	if len(participants) == 0 {
-		return sender.Participant{}
-	}
-
 	// first participant from team (solo)
-	src := participants[0]
+	src := participant
 	p.GameNickname = src.GamerTag
 
 	// search discord login in profile startgg
@@ -337,7 +332,8 @@ func (dh *discordHandler) Process(s *discordgo.Session) {
 		dh.mutex.Unlock()
 	}()
 
-	if err := dh.SendingMessages(ctx, s); err != nil {
+	// TODO: Must be stoppable
+	if err := dh.SendingMessages(ctx); err != nil {
 		log.Printf("SendingMessages stopped or failed: %v", err)
 	}
 }
@@ -369,20 +365,9 @@ func (dh *discordHandler) Process(s *discordgo.Session) {
 // 	}
 // }
 
-// REFACTOR: Вынести в отдельно
-func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Session) error {
+func (dh *discordHandler) SendingMessages(ctx context.Context) error {
 	if dh.auth == nil {
 		return errors.New("sendingMessages: auth client is not initialized - check bot.Start parameters")
-	}
-
-	tournament, err := dh.startgg.client.GetTournament(strings.Replace(strings.SplitAfter(dh.slug, "/")[1], "/", "", 1))
-	if err != nil {
-		return err
-	}
-
-	phaseGroups, err := dh.startgg.client.GetListGroups(dh.slug)
-	if err != nil {
-		return err
 	}
 
 	var testUser sender.Participant
@@ -401,10 +386,21 @@ func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Sess
 		log.Printf("My PlatformID: %v\n", testUser.MessenagerID)
 	}
 
+	// REFACTOR: Change to interface NotificationData
 	// Get pages with state: Not started
 	states := []int{1}
 	if dh.debugMode {
 		states = []int{1, 2, 3}
+	}
+
+	tournament, err := dh.startgg.client.GetTournament(strings.Replace(strings.SplitAfter(dh.slug, "/")[1], "/", "", 1))
+	if err != nil {
+		return err
+	}
+
+	phaseGroups, err := dh.startgg.client.GetListGroups(dh.slug)
+	if err != nil {
+		return err
 	}
 
 	var wg sync.WaitGroup
@@ -458,33 +454,43 @@ func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Sess
 						return
 					}
 
+					// TODO: ADD CHECK 0 COUNT
+					if len(set.Slots[0].Entrant.Participants) == 0 {
+						log.Printf("No contact data from startgg")
+					}
+					if len(set.Slots[1].Entrant.Participants) == 0 {
+						log.Printf("No contact data from startgg")
+					}
+
 					// discord contact check
-					p1 := dh.checkContact(set.Slots[0].Entrant.Participants)
-					p2 := dh.checkContact(set.Slots[1].Entrant.Participants)
+					p1 := dh.checkContact(set.Slots[0].Entrant.Participants[0])
+					p2 := dh.checkContact(set.Slots[1].Entrant.Participants[0])
 
 					if ctx.Err() != nil {
 						return
 					}
 
-					contactP1, err := dh.searchContactDiscord(ctx, s, p1.MessenagerLogin, p1.GameNickname)
+					contactP1, err := dh.msgSender.FindContactOfParticipant(ctx, p1)
 					if err != nil {
-						log.Printf("sending message | Not finded member in discord (%v)\n", p1.MessenagerLogin)
-					} else {
-						p1.MessenagerID = contactP1.MessenagerID
-						p1.Locales = contactP1.Locales
+						log.Printf("FindContact P1 Error (%s): %v\n", p1.MessenagerLogin, err)
 					}
+					//  else {
+					// 	p1.MessenagerID = contactP1.MessenagerID
+					// 	p1.Locales = contactP1.Locales
+					// }
 
 					if ctx.Err() != nil {
 						return
 					}
 
-					contactP2, err := dh.searchContactDiscord(ctx, s, p2.MessenagerLogin, p2.GameNickname)
+					contactP2, err := dh.msgSender.FindContactOfParticipant(ctx, p2)
 					if err != nil {
-						log.Printf("sending message | Not finded member in discord (%v)\n", p2.MessenagerLogin)
-					} else {
-						p2.MessenagerID = contactP2.MessenagerID
-						p2.Locales = contactP2.Locales
+						log.Printf("FindContact P2 Error (%s): %v\n", p2.MessenagerLogin, err)
 					}
+					//  else {
+					// 	p2.MessenagerID = contactP2.MessenagerID
+					// 	p2.Locales = contactP2.Locales
+					// }
 
 					if ctx.Err() != nil {
 						return
@@ -498,12 +504,13 @@ func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Sess
 						RoundNum:       set.Round,
 						PhaseGroupId:   phaseGroupId.Id,
 						Recipient:      contactP1, // For player1
-						Opponent: sender.Participant{
-							MessenagerID:    contactP2.MessenagerID, // To player2
-							MessenagerLogin: p2.MessenagerLogin,
-							GameNickname:    set.Slots[1].Entrant.Participants[0].GamerTag,
-							GameID:          p2.GameID,
-						},
+						Opponent:       contactP2,
+						// sender.Participant{
+						// 	MessenagerID:    contactP2.MessenagerID, // To player2
+						// 	MessenagerLogin: p2.MessenagerLogin,
+						// 	GameNickname:    set.Slots[1].Entrant.Participants[0].GamerTag,
+						// 	GameID:          p2.GameID,
+						// },
 						FullInviteLink: fmt.Sprint("https://www.start.gg/", dh.slug, "/set/", set.Id),
 					}
 					toPlayer2 := sender.SetData{
@@ -514,12 +521,13 @@ func (dh *discordHandler) SendingMessages(ctx context.Context, s *discordgo.Sess
 						RoundNum:       set.Round,
 						PhaseGroupId:   phaseGroupId.Id,
 						Recipient:      contactP2, // For player2
-						Opponent: sender.Participant{
-							MessenagerID:    contactP1.MessenagerID, // To player1
-							MessenagerLogin: p1.MessenagerLogin,
-							GameNickname:    set.Slots[0].Entrant.Participants[0].GamerTag,
-							GameID:          p1.GameID,
-						},
+						Opponent:       contactP2,
+						// sender.Participant{
+						// 	MessenagerID:    contactP1.MessenagerID, // To player1
+						// 	MessenagerLogin: p1.MessenagerLogin,
+						// 	GameNickname:    set.Slots[0].Entrant.Participants[0].GamerTag,
+						// 	GameID:          p1.GameID,
+						// },
 						FullInviteLink: fmt.Sprint("https://www.start.gg/", dh.slug, "/set/", set.Id),
 					}
 

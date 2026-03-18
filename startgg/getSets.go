@@ -47,12 +47,12 @@ type Slots struct {
 
 // Player in tournament
 type Entrant struct {
-	Id           int64          `json:"id"`
-	Participants []Participants `json:"participants"`
+	Id           int64         `json:"id"`
+	Participants []Participant `json:"participants"`
 }
 
 // Player data
-type Participants struct {
+type Participant struct {
 	GamerTag          string            `json:"gamerTag"`
 	ConnectedAccounts ConnectedAccounts `json:"connectedAccounts"`
 	User              User              `json:"user"`

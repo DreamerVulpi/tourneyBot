@@ -80,7 +80,7 @@ func (s *discordHandler) fieldConnection(local locale.Lang) string {
 
 func (s *DiscordSender) fieldCrossplay(local locale.Lang) string {
 	crossplay := local.InviteMessage.CrossplatformStatusTrue
-	if !s.config.rulesMatches.Crossplatform {
+	if !s.cfg.rulesMatches.Crossplatform {
 		crossplay = local.InviteMessage.CrossplatformStatusFalse
 	}
 	return crossplay
@@ -88,29 +88,29 @@ func (s *DiscordSender) fieldCrossplay(local locale.Lang) string {
 
 func (s *DiscordSender) fieldStage(local locale.Lang) string {
 	stage := local.InviteMessage.AnyStage
-	if s.config.rulesMatches.Stage != "any" {
-		stage = s.config.rulesMatches.Stage
+	if s.cfg.rulesMatches.Stage != "any" {
+		stage = s.cfg.rulesMatches.Stage
 	}
 	return stage
 }
 func (s *DiscordSender) fieldLanguage(local locale.Lang) string {
 	lang := local.StreamLobbyMessage.AnyLanguage
-	if s.config.streamLobby.Language != "any" {
+	if s.cfg.streamLobby.Language != "any" {
 		lang = local.StreamLobbyMessage.SameLanguage
 	}
 	return lang
 }
 func (s *DiscordSender) fieldArea(local locale.Lang) string {
 	area := local.StreamLobbyMessage.AnyArea
-	if s.config.streamLobby.Area != "any" {
+	if s.cfg.streamLobby.Area != "any" {
 		area = local.StreamLobbyMessage.CloseArea
 	}
 	return area
 }
 func (s *DiscordSender) fieldConnection(local locale.Lang) string {
 	conn := local.StreamLobbyMessage.AnyConnection
-	if s.config.streamLobby.Conn != "any" {
-		conn = s.config.streamLobby.Conn
+	if s.cfg.streamLobby.Conn != "any" {
+		conn = s.cfg.streamLobby.Conn
 	}
 	return conn
 }
@@ -120,12 +120,12 @@ func (s *DiscordSender) templateEmbedMsg(title string, fields []*discordgo.Messa
 		Title: title,
 		Color: color,
 		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: s.config.logo,
+			IconURL: s.cfg.logo,
 			URL:     "https://github.com/DreamerVulpi/tourneybot",
 			Name:    "TourneyBot",
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: s.config.tournament.Logo.Img,
+			URL: s.cfg.tournament.Logo.Img,
 		},
 		Fields:    fields,
 		Timestamp: time.Now().Format(time.RFC3339),
