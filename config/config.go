@@ -62,12 +62,17 @@ type Csv struct {
 	NameFile string `toml:"nameFile"`
 }
 
+type NamePlatform struct {
+	Platform string `toml:"platform"`
+}
+
 type ConfigTournament struct {
-	Rules  RulesMatches `toml:"rules"`
-	Stream StreamLobby  `toml:"stream"`
-	Logo   Logo         `toml:"logo"`
-	Csv    Csv          `toml:"csv"`
-	Game   ConfigGame   `toml:"game"`
+	Platform NamePlatform `toml:"tournamentPlatform"`
+	Rules    RulesMatches `toml:"rules"`
+	Stream   StreamLobby  `toml:"stream"`
+	Logo     Logo         `toml:"logo"`
+	Csv      Csv          `toml:"csv"`
+	Game     ConfigGame   `toml:"game"`
 }
 
 func LoadConfig(file string) (Config, error) {
@@ -104,6 +109,8 @@ func LoadTournament(file string) (ConfigTournament, error) {
 	}
 
 	switch {
+	case len(l.Platform.Platform) == 0:
+		return ConfigTournament{}, errors.New("local: field platform is null")
 	case l.Rules.StandardFormat == 0:
 		return ConfigTournament{}, errors.New("local: field standardFormat is null")
 	case l.Rules.FinalsFormat == 0:
