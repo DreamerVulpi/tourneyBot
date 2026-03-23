@@ -58,11 +58,9 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 		currentTime := time.Now()
 		if err1 != nil {
 			log.Printf("Process | Player 1 (%s) not found in DB: %v\nSaving to DB...", set.ContactPlayer1.MessenagerLogin, err1)
-			p.saveNewParticipant(set.ContactPlayer1, currentTime)
 		}
 		if err2 != nil {
 			log.Printf("Process | Player 2 (%s) not found in DB: %v\nSaving to DB...", set.ContactPlayer2.MessenagerLogin, err2)
-			p.saveNewParticipant(set.ContactPlayer2, currentTime)
 		}
 
 		if p.DebugMode {
@@ -77,16 +75,14 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 
 			setForP2.ContactPlayer1 = contactP2
 			setForP2.ContactPlayer2 = contactP1
-			setForP1.IsTest = true
+			setForP2.IsTest = true
 
-			p.saveNewParticipant(set.ContactPlayer1, currentTime)
 			if err := p.Messenger.SendNotification(ctx, p.TestContact.MessenagerID, setForP1); err != nil {
 				log.Printf("Debug | Failed to send P1-view: %v", err)
 			}
 
 			time.Sleep(1500 * time.Millisecond)
 
-			p.saveNewParticipant(set.ContactPlayer2, currentTime)
 			if err := p.Messenger.SendNotification(ctx, p.TestContact.MessenagerID, setForP2); err != nil {
 				log.Printf("Debug | Failed to send P2-view: %v", err)
 			}
@@ -137,24 +133,24 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 	return nil
 }
 
-func (s *NotificationSystem) saveNewParticipant(p Participant, t time.Time) {
-	locale := "N/D"
-	if len(p.Locales) > 0 {
-		locale = p.Locales[0]
-	}
+// func (s *NotificationSystem) saveNewParticipant(p Participant, t time.Time) {
+// 	locale := "N/D"
+// 	if len(p.Locales) > 0 {
+// 		locale = p.Locales[0]
+// 	}
 
-	request := entity.ParticipantAddRequest{
-		GamerTag:               p.GameNickname,
-		MessengerPlatform:      p.MessenagerName,
-		MessengerPlatformId:    p.MessenagerID,
-		MessengerPlatformLogin: p.MessenagerLogin,
-		UpdatedAt:              t,
-		IsFound:                true,
-		Locale:                 locale,
-	}
+// 	request := entity.ParticipantAddRequest{
+// 		GamerTag:               p.GameNickname,
+// 		MessengerPlatform:      p.MessenagerName,
+// 		MessengerPlatformId:    p.MessenagerID,
+// 		MessengerPlatformLogin: p.MessenagerLogin,
+// 		UpdatedAt:              t,
+// 		IsFound:                true,
+// 		Locale:                 locale,
+// 	}
 
-	_, err := s.ParticipantUC.AddParticipant(request)
-	if err != nil {
-		log.Printf("Process | DB Save Error (%s) to DB: %v", p.MessenagerLogin, err)
-	}
-}
+// 	_, err := s.ParticipantUC.AddParticipant(request)
+// 	if err != nil {
+// 		log.Printf("Process | DB Save Error (%s) to DB: %v", p.MessenagerLogin, err)
+// 	}
+// }

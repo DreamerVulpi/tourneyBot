@@ -221,10 +221,6 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 		return sender.Participant{}, err
 	}
 
-	if p.MessenagerLogin == "" || p.MessenagerLogin == "N/D" {
-		return sender.Participant{}, fmt.Errorf("findContact | empty platform login for %v\n", p.GameNickname)
-	}
-
 	request := entity.ParticipantGetRequest{
 		GamerTag:           p.GameNickname,
 		MessenagerPlatform: s.GetPlatformMessenagerName(),
@@ -245,25 +241,35 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 
 	cleanNickname := s.cleanDiscordLogin(p.MessenagerLogin)
 	var messengerID string
-	locale := "default"
+	currentLocale := "default"
 
-	members, err := s.session.GuildMembersSearch(s.cfg.guildID, cleanNickname, 1)
-	if err != nil || len(members) != 1 {
+	if p.MessenagerLogin == "" || p.MessenagerLogin == "N/D" {
 		if s.debugMode {
-			log.Printf("search: %s not found, using mock data (debug)\n", cleanNickname)
+			log.Printf("findContact | %s has no login, using debug mock", p.GameNickname)
 			messengerID = "000000000000000000"
-			locale = s.cfg.rolesIdList.Ru
+			cleanNickname = "N/D"
+			currentLocale = s.cfg.rolesIdList.Ru
 		} else {
 			return sender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
 		}
 	} else {
-		targetMember := members[0]
-		messengerID = targetMember.User.ID
+		members, err := s.session.GuildMembersSearch(s.cfg.guildID, cleanNickname, 1)
+		if err != nil || len(members) != 1 {
+			if s.debugMode {
+				messengerID = "000000000000000000"
+				currentLocale = s.cfg.rolesIdList.Ru
+			} else {
+				return sender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
+			}
+		} else {
+			targetMember := members[0]
+			messengerID = targetMember.User.ID
 
-		for _, roleId := range targetMember.Roles {
-			// TODO: Change reconize locale in future (More languages)
-			if roleId == s.cfg.rolesIdList.Ru {
-				locale = roleId
+			for _, roleId := range targetMember.Roles {
+				// TODO: Change reconize locale in future (More languages)
+				if roleId == s.cfg.rolesIdList.Ru {
+					currentLocale = roleId
+				}
 			}
 		}
 	}
@@ -275,20 +281,19 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 		MessengerPlatformLogin: cleanNickname,
 		IsFound:                true,
 		UpdatedAt:              time.Now(),
-		Locale:                 locale,
+		Locale:                 currentLocale,
 	}
 
 	_, err = s.participantUC.AddParticipant(addRequest)
 	if err != nil {
 		log.Printf("db | failed to save participant %v: %v", cleanNickname, err)
-		return sender.Participant{}, err
+	} else {
+		log.Printf("db | successfully saved participant %v", cleanNickname)
 	}
-
-	log.Printf("db | successfully saved participant %v", cleanNickname)
 
 	return sender.Participant{
 		MessenagerID:    addRequest.MessengerPlatformId,
-		MessenagerLogin: addRequest.GamerTag,
+		MessenagerLogin: addRequest.MessengerPlatformLogin,
 		MessenagerName:  s.GetPlatformMessenagerName(),
 		GameNickname:    p.GameNickname,
 		GameID:          p.GameID,
