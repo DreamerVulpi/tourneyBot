@@ -8,6 +8,7 @@ type LogMessage struct {
 	SuccesfullSendedMsg    string
 	FailedSentMsg          string
 	UsuallyMsgHeader       string
+	CheckIn                string
 }
 
 type InviteMessage struct {

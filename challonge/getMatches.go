@@ -26,9 +26,10 @@ type ModelMatches struct {
 }
 
 type MatchOutput struct {
+	ID                  string             `json:"-"`
 	Identifier          string             `json:"identifier"`
 	PointsByParticipant []PointRecord      `json:"pointsByParticipant"`
-	Round               int64              `json:"round"`
+	Round               int                `json:"round"`
 	ScoreInSets         [][]int            `json:"scoreInSets"`
 	Scores              string             `json:"scores"`
 	State               State              `json:"state"`
@@ -46,8 +47,8 @@ type Timestamps struct {
 }
 
 type PointRecord struct {
-	ParticipantID interface{} `json:"participantId"`
-	Scores        []int       `json:"scores"`
+	ParticipantID string `json:"participantId"`
+	Scores        []int  `json:"scores"`
 }
 
 type MatchRelationships struct {
@@ -64,10 +65,14 @@ type PlayerData struct {
 	Type string `json:"type"`
 }
 
-func (c *Client) GetMatches(ctx context.Context, tourneySlug string) ([]MatchOutput, error) {
+func (c *Client) GetMatches(ctx context.Context, tourneySlug string, states []State) ([]MatchOutput, error) {
 	slug := ExtractSlug(tourneySlug)
+	var variables = map[string]any{
+		"slug":      slug,
+		"variables": states,
+	}
 
-	results, err := GetData[ApidogMatchesResponse](c, ctx, getMatches, slug)
+	results, err := GetData[ApidogMatchesResponse](c, ctx, getMatches, variables)
 	if err != nil {
 		return nil, fmt.Errorf("getMatches | Error getting data: %w", err)
 	}
@@ -75,6 +80,7 @@ func (c *Client) GetMatches(ctx context.Context, tourneySlug string) ([]MatchOut
 	var matches []MatchOutput
 	for _, m := range results.Data {
 		attr := m.Attributes
+		attr.ID = m.ID
 		attr.Relationships = m.Relationships
 		matches = append(matches, attr)
 	}

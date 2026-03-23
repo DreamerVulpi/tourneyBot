@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/dreamervulpi/tourneyBot/config"
-	auth "github.com/dreamervulpi/tourneyBot/internal/auth"
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	"github.com/dreamervulpi/tourneyBot/internal/bot/discord"
 	"github.com/dreamervulpi/tourneyBot/internal/db"
 	"github.com/joho/godotenv"
@@ -18,17 +18,19 @@ func main() {
 
 	// ctx := context.Background()
 
-	// Challonge
+	// // Challonge
 	// chAuth := &auth.AuthClient{
-	// 	Config:    auth.GetChallongeOauth2(),
-	// 	TokenFile: "token_challonge.json",
+	// 	Config:     auth.GetChallongeOauth2(),
+	// 	TokenFile:  "token_challonge.json",
+	// 	HTTPClient: &http.Client{},
 	// }
 
-	// auth.TestChallongeCall(chAuth)
+	// // auth.TestChallongeCall(chAuth)
 	// token, err := chAuth.GetAccessToken("token_challonge.json")
 	// if err != nil {
 	// 	log.Printf("can't get token Challonge: %v\n", err)
 	// }
+
 	// ch := challonge.NewClient(chAuth.HTTPClient, token)
 	// tournament, err := ch.GetTournament(ctx, "https://challonge.com/ru/tournamentdciii")
 	// if err != nil {
@@ -36,6 +38,7 @@ func main() {
 	// }
 	// log.Println(tournament.Name)
 	// log.Println(tournament.Description)
+
 	// matches, err := ch.GetMatches(ctx, "https://challonge.com/ru/tournamentdciii")
 	// log.Println(matches)
 

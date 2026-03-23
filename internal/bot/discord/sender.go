@@ -45,7 +45,7 @@ func (s *DiscordSender) logSentMsgToDiscord(success bool, errStr string, set sen
 
 	if len(set.FullInviteLink) > 0 {
 		logFields = append(logFields, &discordgo.MessageEmbedField{
-			Name: fmt.Sprintf(local.InviteMessage.CheckIn, set.FullInviteLink), Value: "\u200B",
+			Name: fmt.Sprintf(local.LogMessage.CheckIn, set.FullInviteLink), Value: "\u200B",
 		})
 	}
 

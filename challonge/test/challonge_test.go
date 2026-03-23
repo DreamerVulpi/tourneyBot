@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/dreamervulpi/tourneyBot/challonge"
@@ -27,8 +28,8 @@ func TestGetDataChallonge(t *testing.T) {
 			SuggestedPlayOrder: 1,
 			ScoreInSets:        [][]int{{0, 2}},
 			PointsByParticipant: []challonge.PointRecord{
-				{ParticipantID: float64(112579135), Scores: []int{0}},
-				{ParticipantID: float64(112579132), Scores: []int{2}},
+				{ParticipantID: strconv.Itoa(112579135), Scores: []int{0}},
+				{ParticipantID: strconv.Itoa(112579132), Scores: []int{2}},
 			},
 			Timestamps: challonge.Timestamps{
 				StartedAt:  "2020-01-11T14:00:50.421Z",

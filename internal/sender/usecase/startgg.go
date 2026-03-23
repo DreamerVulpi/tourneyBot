@@ -52,7 +52,7 @@ func LoadCSV(nameFile string) (map[string]sender.Participant, error) {
 	}
 
 	if len(records) == 0 {
-		return map[string]sender.Participant{}, nil
+		return map[string]sender.Participant{}, fmt.Errorf("loadCSV: 0 records CSV, %v", err)
 	}
 
 	// Search index for get data
@@ -153,7 +153,7 @@ func (s StartggSetAdapter) GetSetsData(ctx context.Context) ([]sender.SetData, e
 		for i := 0; i < pages; i++ {
 			sets, err := s.Client.GetSets(phaseGroupId.Id, i+1, 60, states)
 			if err != nil {
-				log.Printf("Error getting sets: %v", err)
+				log.Printf("GetSetsData | Startgg | Can't get data of sets: %v", err)
 				continue
 			}
 
@@ -167,8 +167,8 @@ func (s StartggSetAdapter) GetSetsData(ctx context.Context) ([]sender.SetData, e
 					continue
 				}
 
-				p1 := s.ConvertData(set.Slots[0].Entrant.Participants[0])
-				p2 := s.ConvertData(set.Slots[1].Entrant.Participants[0])
+				p1 := s.ConvertContacts(set.Slots[0].Entrant.Participants[0])
+				p2 := s.ConvertContacts(set.Slots[1].Entrant.Participants[0])
 
 				isFinals := false
 				if s.Finals.FinalBracketId == phaseGroupId.Id {
@@ -198,7 +198,7 @@ func (s StartggSetAdapter) GetSetsData(ctx context.Context) ([]sender.SetData, e
 	return setsData, nil
 }
 
-func (s *StartggSetAdapter) ConvertData(data startgg.Participant) sender.Participant {
+func (s *StartggSetAdapter) ConvertContacts(data startgg.Participant) sender.Participant {
 	p := sender.Participant{
 		MessenagerLogin: "N/D",
 		GameID:          "N/D",

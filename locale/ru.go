@@ -9,6 +9,7 @@ var Ru = Lang{
 		SuccesfullSendedMsg:    "Приглашение было отправлено %v",
 		FailedSentMsg:          "Не удалось отправить сообщение %v по причине %v",
 		UsuallyMsgHeader:       "Информация ℹ️",
+		CheckIn:                "**Ссылка на check-in: %s**",
 	},
 	InviteMessage: InviteMessage{
 		Title:                    "Турнир **%v**",

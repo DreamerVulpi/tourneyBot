@@ -278,6 +278,13 @@ func Start(dsAuth *auth.AuthClient, tourneyAuth *auth.AuthClient, conn *pgxpool.
 	if len(user.ID) <= 0 {
 		return fmt.Errorf("Failed get ID")
 	}
+	// user, err := tourneyAuth.GetChallongeMe(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// if len(user.ID) <= 0 {
+	// 	return fmt.Errorf("Failed get ID")
+	// }
 
 	log.Println(user.ID)
 
