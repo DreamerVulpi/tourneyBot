@@ -2,31 +2,155 @@ package sender
 
 import (
 	"context"
+	"encoding/json"
+	"log"
+	"time"
+
+	"os"
+
+	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
+	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
 )
 
-type Participant struct {
-	MessenagerID    string
-	MessenagerLogin string
-	GameNickname    string
-	GameID          string
-	Locales         []string
+type NotificationSystem struct {
+	Messenger     NotificationSender
+	Data          NotificationData
+	ParticipantUC usecase.Participant
+	SentSetUC     usecase.SentSet
+	DebugMode     bool
+	TestContact   Participant
 }
 
-type SetData struct {
-	TournamentName string
-	SetID          int64
-	StreamName     string
-	StreamSourse   string
-	RoundNum       int
-	PhaseGroupId   int64
-	Recipient      Participant
-	Opponent       Participant
-	FullInviteLink string
-	IsFinals       bool
-	IsTest         bool
+func NewNotificationSystem(s NotificationSender, d NotificationData) *NotificationSystem {
+	return &NotificationSystem{
+		Messenger: s,
+		Data:      d,
+	}
 }
 
-type NotificationSender interface {
-	SendNotification(ctx context.Context, targetID string, data SetData) error
-	GetPlatformMessenagerName() string
+func (p NotificationSystem) Process(ctx context.Context) error {
+	sets, err := p.Data.GetSetsData(ctx)
+	if err != nil {
+		return err
+	}
+	file, _ := json.MarshalIndent(sets, "", " ")
+	os.WriteFile("test.txt", file, 0644)
+
+	for _, set := range sets {
+		select {
+		case <-ctx.Done():
+			log.Println("Process | Loop interrupted by context cancellation")
+			return ctx.Err()
+		default:
+		}
+
+		alreadySent, err := p.SentSetUC.IsExists(entity.SentSetCheckRequest{SetId: set.SetID})
+		if err != nil {
+			return err
+		}
+		if alreadySent.State && !p.DebugMode {
+			continue
+		}
+
+		contactP1, err1 := p.Messenger.FindContactOfParticipant(ctx, set.ContactPlayer1)
+		contactP2, err2 := p.Messenger.FindContactOfParticipant(ctx, set.ContactPlayer2)
+
+		currentTime := time.Now()
+		if err1 != nil {
+			log.Printf("Process | Player 1 (%s) not found in DB: %v\nSaving to DB...", set.ContactPlayer1.MessenagerLogin, err1)
+		}
+		if err2 != nil {
+			log.Printf("Process | Player 2 (%s) not found in DB: %v\nSaving to DB...", set.ContactPlayer2.MessenagerLogin, err2)
+		}
+
+		if p.DebugMode {
+			log.Printf("Debug | Redirecting notification for set %v to test user %v", set.SetID, p.TestContact.MessenagerLogin)
+
+			setForP1 := set
+			setForP2 := set
+
+			setForP1.ContactPlayer1 = contactP1
+			setForP1.ContactPlayer2 = contactP2
+			setForP1.IsTest = true
+
+			setForP2.ContactPlayer1 = contactP2
+			setForP2.ContactPlayer2 = contactP1
+			setForP2.IsTest = true
+
+			if err := p.Messenger.SendNotification(ctx, p.TestContact.MessenagerID, setForP1); err != nil {
+				log.Printf("Debug | Failed to send P1-view: %v", err)
+			}
+
+			time.Sleep(1500 * time.Millisecond)
+
+			if err := p.Messenger.SendNotification(ctx, p.TestContact.MessenagerID, setForP2); err != nil {
+				log.Printf("Debug | Failed to send P2-view: %v", err)
+			}
+
+			continue
+		}
+
+		set.ContactPlayer1 = contactP1
+		set.ContactPlayer2 = contactP2
+
+		notificationSent := false
+
+		if contactP1.MessenagerID != "" && contactP1.MessenagerID != "N/D" {
+			if err := p.Messenger.SendNotification(ctx, contactP1.MessenagerID, set); err == nil {
+				notificationSent = true
+			} else {
+				log.Printf("Process | Can't send notification to %s: %v", contactP1.MessenagerID, err)
+			}
+		}
+		if contactP2.MessenagerID != "" && contactP2.MessenagerID != "N/D" {
+			if err := p.Messenger.SendNotification(ctx, contactP2.MessenagerID, set); err == nil {
+				notificationSent = true
+			} else {
+				log.Printf("Process | Can't send notification to %s: %v", contactP2.MessenagerID, err)
+			}
+		}
+
+		slug := p.Data.GetTournamentSlug()
+		if len(slug) < 3 {
+			slug = "N/D"
+		}
+
+		if notificationSent {
+			request := entity.SentSetAddRequest{
+				SetId:              set.SetID,
+				TournamentPlatform: p.Data.GetPlatformTournamentName(),
+				MessengerPlatform:  p.Messenger.GetPlatformMessenagerName(),
+				TournamentSlug:     slug,
+				SentAt:             currentTime,
+			}
+			_, err := p.SentSetUC.AddSentSet(request)
+			if err != nil {
+				log.Printf("Process | Can't add set (%v) to DB: %v", set.SetID, err)
+			}
+		}
+		time.Sleep(1500 * time.Millisecond)
+	}
+	return nil
 }
+
+// func (s *NotificationSystem) saveNewParticipant(p Participant, t time.Time) {
+// 	locale := "N/D"
+// 	if len(p.Locales) > 0 {
+// 		locale = p.Locales[0]
+// 	}
+
+// 	request := entity.ParticipantAddRequest{
+// 		GamerTag:               p.GameNickname,
+// 		MessengerPlatform:      p.MessenagerName,
+// 		MessengerPlatformId:    p.MessenagerID,
+// 		MessengerPlatformLogin: p.MessenagerLogin,
+// 		UpdatedAt:              t,
+// 		IsFound:                true,
+// 		Locale:                 locale,
+// 	}
+
+// 	_, err := s.ParticipantUC.AddParticipant(request)
+// 	if err != nil {
+// 		log.Printf("Process | DB Save Error (%s) to DB: %v", p.MessenagerLogin, err)
+// 	}
+// }

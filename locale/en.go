@@ -2,12 +2,14 @@ package locale
 
 var En = Lang{
 	LogMessage: LogMessage{
-		Title:               "Log of tournament **%v**",
-		SuccessfulMsgHeader: "Successful ✅",
-		FailMsgHeader:       "Fail ❌",
-		SuccesfullSendedMsg: "Invite message sended to %v",
-		FailedSentMsg:       "Failed sent message due to %v ",
-		UsuallyMsgHeader:    "Information ℹ️",
+		Title:                  "Log of tournament **%v**",
+		StatusSentNotification: "Status of sent notification: %v",
+		SuccessfulMsgHeader:    "Successful ✅",
+		FailMsgHeader:          "Fail ❌",
+		SuccesfullSendedMsg:    "Invite message sended to %v",
+		FailedSentMsg:          "Failed sent message due to %v ",
+		UsuallyMsgHeader:       "Information ℹ️",
+		CheckIn:                "**Link to check-in: %s**",
 	},
 	InviteMessage: InviteMessage{
 		Title:                    "Tournament **%v**",
