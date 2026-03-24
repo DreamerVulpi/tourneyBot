@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
+	entity "github.com/dreamervulpi/tourneyBot/internal/entity/db"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

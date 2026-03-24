@@ -1,9 +1,9 @@
-package usecase
+package db
 
 import (
 	"time"
 
-	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
+	entity "github.com/dreamervulpi/tourneyBot/internal/entity/db"
 )
 
 type SentSetRepo interface {

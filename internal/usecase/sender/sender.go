@@ -2,26 +2,24 @@ package sender
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"time"
 
-	"os"
-
-	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
-	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
+	entityDB "github.com/dreamervulpi/tourneyBot/internal/entity/db"
+	entitySender "github.com/dreamervulpi/tourneyBot/internal/entity/sender"
+	usecaseDB "github.com/dreamervulpi/tourneyBot/internal/usecase/db"
 )
 
 type NotificationSystem struct {
-	Messenger     NotificationSender
-	Data          NotificationData
-	ParticipantUC usecase.Participant
-	SentSetUC     usecase.SentSet
+	Messenger     entitySender.NotificationSender
+	Data          entitySender.NotificationData
+	ParticipantUC usecaseDB.Participant
+	SentSetUC     usecaseDB.SentSet
 	DebugMode     bool
-	TestContact   Participant
+	TestContact   entitySender.Participant
 }
 
-func NewNotificationSystem(s NotificationSender, d NotificationData) *NotificationSystem {
+func NewNotificationSystem(s entitySender.NotificationSender, d entitySender.NotificationData) *NotificationSystem {
 	return &NotificationSystem{
 		Messenger: s,
 		Data:      d,
@@ -33,8 +31,6 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	file, _ := json.MarshalIndent(sets, "", " ")
-	os.WriteFile("test.txt", file, 0644)
 
 	for _, set := range sets {
 		select {
@@ -44,7 +40,7 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 		default:
 		}
 
-		alreadySent, err := p.SentSetUC.IsExists(entity.SentSetCheckRequest{SetId: set.SetID})
+		alreadySent, err := p.SentSetUC.IsExists(entityDB.SentSetCheckRequest{SetId: set.SetID})
 		if err != nil {
 			return err
 		}
@@ -116,7 +112,7 @@ func (p NotificationSystem) Process(ctx context.Context) error {
 		}
 
 		if notificationSent {
-			request := entity.SentSetAddRequest{
+			request := entityDB.SentSetAddRequest{
 				SetId:              set.SetID,
 				TournamentPlatform: p.Data.GetPlatformTournamentName(),
 				MessengerPlatform:  p.Messenger.GetPlatformMessenagerName(),

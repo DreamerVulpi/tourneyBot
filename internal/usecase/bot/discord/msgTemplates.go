@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dreamervulpi/tourneyBot/locale"
+	"github.com/dreamervulpi/tourneyBot/internal/entity/locale"
 )
 
 const (

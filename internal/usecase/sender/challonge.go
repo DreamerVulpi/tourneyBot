@@ -1,4 +1,4 @@
-package usecase
+package sender
 
 import (
 	"context"
@@ -7,15 +7,16 @@ import (
 
 	"fmt"
 
-	"github.com/dreamervulpi/tourneyBot/challonge"
-	"github.com/dreamervulpi/tourneyBot/internal/sender"
+	entityChallonge "github.com/dreamervulpi/tourneyBot/internal/entity/challonge"
+	entitySender "github.com/dreamervulpi/tourneyBot/internal/entity/sender"
+	"github.com/dreamervulpi/tourneyBot/internal/infrastructure/challonge"
 )
 
 type ChallongeMatchAdapter struct {
 	Client         *challonge.Client
 	TournamentSlug string
 	DebugMode      bool
-	TestUser       sender.Participant
+	TestUser       entitySender.Participant
 }
 
 func (c ChallongeMatchAdapter) GetPlatformTournamentName() string {
@@ -26,7 +27,7 @@ func (c ChallongeMatchAdapter) GetTournamentSlug() string {
 	return c.TournamentSlug
 }
 
-func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]sender.SetData, error) {
+func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]entitySender.SetData, error) {
 	// TODO: Complete method
 	// https://challonge.com/ru/tournamentdciii
 
@@ -35,9 +36,9 @@ func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]sender.SetDat
 		return nil, fmt.Errorf("GetSetsData | Challonge | get tournament error: %w", err)
 	}
 
-	states := []challonge.State{challonge.Open}
+	states := []entityChallonge.State{entityChallonge.Open}
 	if c.DebugMode {
-		states = []challonge.State{challonge.Open, challonge.Pending, challonge.Complete}
+		states = []entityChallonge.State{entityChallonge.Open, entityChallonge.Pending, entityChallonge.Complete}
 	}
 
 	matches, err := c.Client.GetMatches(ctx, c.TournamentSlug, states)
@@ -45,7 +46,7 @@ func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]sender.SetDat
 		return nil, fmt.Errorf("GetSetsData | Challonge | Can't get data of sets: %v", err)
 	}
 
-	var matchesData []sender.SetData
+	var matchesData []entitySender.SetData
 
 	for _, match := range matches {
 		if ctx.Err() != nil {
@@ -76,7 +77,7 @@ func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]sender.SetDat
 		} else {
 			matchID = convertedMatchID
 		}
-		set := sender.SetData{
+		set := entitySender.SetData{
 			TournamentName: tournament.Name,
 			SetID:          matchID,
 			// TODO: StreamName, StreamSourse
@@ -93,8 +94,8 @@ func (c ChallongeMatchAdapter) GetSetsData(ctx context.Context) ([]sender.SetDat
 	return matchesData, nil
 }
 
-func (c *ChallongeMatchAdapter) ConvertContacts(data challonge.ParticipantOutput) sender.Participant {
-	p := sender.Participant{
+func (c *ChallongeMatchAdapter) ConvertContacts(data entityChallonge.ParticipantOutput) entitySender.Participant {
+	p := entitySender.Participant{
 		MessenagerLogin: "N/D",
 		GameID:          "N/D",
 		GameNickname:    "N/D",

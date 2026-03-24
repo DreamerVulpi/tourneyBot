@@ -15,9 +15,10 @@ import (
 	"github.com/dreamervulpi/tourneyBot/config"
 	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	"github.com/dreamervulpi/tourneyBot/internal/db/repo"
-	"github.com/dreamervulpi/tourneyBot/internal/db/usecase"
-	"github.com/dreamervulpi/tourneyBot/internal/sender"
-	senderUC "github.com/dreamervulpi/tourneyBot/internal/sender/usecase"
+	entitySender "github.com/dreamervulpi/tourneyBot/internal/entity/sender"
+	usecaseDB "github.com/dreamervulpi/tourneyBot/internal/usecase/db"
+	"github.com/dreamervulpi/tourneyBot/internal/usecase/sender"
+	usecaseSender "github.com/dreamervulpi/tourneyBot/internal/usecase/sender"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -30,18 +31,18 @@ type params struct {
 	streamLobby    config.StreamLobby
 	rolesIdList    config.ConfigRolesIdDiscord
 	debugChannelID string
-	debugUser      sender.Participant
+	debugUser      entitySender.Participant
 }
 
 type preparedContacts struct {
-	contacts      map[string]sender.Participant
+	contacts      map[string]entitySender.Participant
 	embedContacts []*discordgo.MessageEmbed
 	tourneyRole   *discordgo.Role
 }
 
 type discordHandler struct {
 	auth               *auth.AuthClient
-	ns                 sender.NotificationSystem
+	ns                 usecaseSender.NotificationSystem
 	tournamentPlatform string
 	contacts           preparedContacts
 	cancel             context.CancelFunc
@@ -58,7 +59,7 @@ func (dh *discordHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 		log.Println("Prepare contacts from CSV...")
 		for nickname, dc := range dh.contacts.contacts {
 			time.Sleep(1 * time.Second)
-			contact := sender.Participant{
+			contact := entitySender.Participant{
 				MessenagerID:    "N/D",
 				MessenagerLogin: dc.MessenagerLogin,
 				MessenagerName:  dh.ns.Messenger.GetPlatformMessenagerName(),
@@ -290,7 +291,7 @@ func Start(dsAuth *auth.AuthClient, tourneyAuth *auth.AuthClient, conn *pgxpool.
 
 	ds := &DiscordSender{
 		session:       session,
-		participantUC: usecase.Participant{Repo: &repo.Participants{Conn: conn}},
+		participantUC: usecaseDB.Participant{Repo: &repo.Participants{Conn: conn}},
 		cfg:           configTournament,
 		adminID:       user.ID,
 		debugMode:     cfg.DebugMode.Mode,
@@ -298,8 +299,8 @@ func Start(dsAuth *auth.AuthClient, tourneyAuth *auth.AuthClient, conn *pgxpool.
 
 	ns := sender.NotificationSystem{
 		Messenger:     ds,
-		ParticipantUC: usecase.Participant{Repo: &repo.Participants{Conn: conn}},
-		SentSetUC:     usecase.SentSet{Repo: &repo.SentSet{Conn: conn}},
+		ParticipantUC: usecaseDB.Participant{Repo: &repo.Participants{Conn: conn}},
+		SentSetUC:     usecaseDB.SentSet{Repo: &repo.SentSet{Conn: conn}},
 		DebugMode:     cfg.DebugMode.Mode,
 	}
 
@@ -308,7 +309,7 @@ func Start(dsAuth *auth.AuthClient, tourneyAuth *auth.AuthClient, conn *pgxpool.
 		if err != nil {
 			log.Printf("InitBot | Failed to get debug user: %v", err)
 		} else {
-			ns.TestContact = sender.Participant{
+			ns.TestContact = entitySender.Participant{
 				MessenagerID:    me.ID,
 				MessenagerLogin: me.Username,
 				Locales:         []string{"ru"},
@@ -335,7 +336,7 @@ func Start(dsAuth *auth.AuthClient, tourneyAuth *auth.AuthClient, conn *pgxpool.
 	commandHandlers["edit-logo-tournament"] = cmdHandler.editLogoTournament
 
 	var trigger bool
-	discordContacts, err := senderUC.LoadCSV(tournament.Csv.NameFile)
+	discordContacts, err := usecaseSender.LoadCSV(config.GetAbsPath("config/" + tournament.Csv.NameFile))
 	cmdHandler.contacts.contacts = discordContacts
 	if err != nil {
 		log.Println("CSV file isn't loaded. Commands: contacts and roles unavailable. Autofill empty data unavailable.")

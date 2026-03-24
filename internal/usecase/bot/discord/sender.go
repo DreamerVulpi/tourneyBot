@@ -10,22 +10,22 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/internal/auth"
-	"github.com/dreamervulpi/tourneyBot/internal/db/entity"
-	dbUC "github.com/dreamervulpi/tourneyBot/internal/db/usecase"
-	"github.com/dreamervulpi/tourneyBot/internal/sender"
-	senderUC "github.com/dreamervulpi/tourneyBot/internal/sender/usecase"
-	"github.com/dreamervulpi/tourneyBot/locale"
+	entityDB "github.com/dreamervulpi/tourneyBot/internal/entity/db"
+	entityLocale "github.com/dreamervulpi/tourneyBot/internal/entity/locale"
+	entitySender "github.com/dreamervulpi/tourneyBot/internal/entity/sender"
+	usecaseDB "github.com/dreamervulpi/tourneyBot/internal/usecase/db"
+	senderUC "github.com/dreamervulpi/tourneyBot/internal/usecase/sender"
 )
 
 type DiscordSender struct {
 	session       *discordgo.Session
 	cfg           params
-	participantUC dbUC.Participant
+	participantUC usecaseDB.Participant
 	adminID       string
 	debugMode     bool
 }
 
-func (s *DiscordSender) logSentMsgToDiscord(success bool, errStr string, set sender.SetData, local locale.Lang, gameNickname string) {
+func (s *DiscordSender) logSentMsgToDiscord(success bool, errStr string, set entitySender.SetData, local entityLocale.Lang, gameNickname string) {
 	var logFields []*discordgo.MessageEmbedField
 	var color int
 
@@ -61,7 +61,7 @@ func (s *DiscordSender) logSentMsgToDiscord(success bool, errStr string, set sen
 	}
 }
 
-func (s *DiscordSender) prepareSetData(recipient, opponent sender.Participant, set sender.SetData, local locale.Lang) (*discordgo.MessageEmbed, error) {
+func (s *DiscordSender) prepareSetData(recipient, opponent entitySender.Participant, set entitySender.SetData, local entityLocale.Lang) (*discordgo.MessageEmbed, error) {
 	format := s.cfg.rulesMatches.StandardFormat
 	embedColor := ColorDefault
 
@@ -150,9 +150,9 @@ func (s *DiscordSender) prepareSetData(recipient, opponent sender.Participant, s
 	return message, nil
 }
 
-func (s *DiscordSender) msgInvite(targetID string, set sender.SetData, channel *discordgo.Channel) {
-	var recipient sender.Participant
-	var opponent sender.Participant
+func (s *DiscordSender) msgInvite(targetID string, set entitySender.SetData, channel *discordgo.Channel) {
+	var recipient entitySender.Participant
+	var opponent entitySender.Participant
 	var sidePrefix string
 
 	if targetID == set.ContactPlayer1.MessenagerID {
@@ -166,9 +166,9 @@ func (s *DiscordSender) msgInvite(targetID string, set sender.SetData, channel *
 	}
 
 	// TODO: Change reconize locale in future
-	local := locale.En
+	local := entityLocale.En
 	if len(recipient.Locales) > 0 {
-		local = locale.Ru
+		local = entityLocale.Ru
 	}
 
 	message, err := s.prepareSetData(recipient, opponent, set, local)
@@ -193,7 +193,7 @@ func (s *DiscordSender) msgInvite(targetID string, set sender.SetData, channel *
 	log.Printf("msgInvite | success sended DM to %s (%s)", recipient.GameNickname, sidePrefix)
 }
 
-func (s *DiscordSender) SendNotification(ctx context.Context, targetID string, set sender.SetData) error {
+func (s *DiscordSender) SendNotification(ctx context.Context, targetID string, set entitySender.SetData) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -216,19 +216,19 @@ func (s *DiscordSender) GetPlatformMessenagerName() string {
 	return "discord"
 }
 
-func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.Participant) (sender.Participant, error) {
+func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p entitySender.Participant) (entitySender.Participant, error) {
 	if err := ctx.Err(); err != nil {
-		return sender.Participant{}, err
+		return entitySender.Participant{}, err
 	}
 
-	request := entity.ParticipantGetRequest{
+	request := entityDB.ParticipantGetRequest{
 		GamerTag:           p.GameNickname,
 		MessenagerPlatform: s.GetPlatformMessenagerName(),
 	}
 
 	response, err := s.participantUC.GetParticipant(request)
 	if err == nil {
-		return sender.Participant{
+		return entitySender.Participant{
 			MessenagerID:    response.MessengerPlatformId,
 			MessenagerLogin: p.MessenagerLogin,
 			MessenagerName:  s.GetPlatformMessenagerName(),
@@ -250,7 +250,7 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 			cleanNickname = "N/D"
 			currentLocale = s.cfg.rolesIdList.Ru
 		} else {
-			return sender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
+			return entitySender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
 		}
 	} else {
 		members, err := s.session.GuildMembersSearch(s.cfg.guildID, cleanNickname, 1)
@@ -259,7 +259,7 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 				messengerID = "000000000000000000"
 				currentLocale = s.cfg.rolesIdList.Ru
 			} else {
-				return sender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
+				return entitySender.Participant{}, fmt.Errorf("findContact | member %s not founded in guild (server)\n", cleanNickname)
 			}
 		} else {
 			targetMember := members[0]
@@ -274,7 +274,7 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 		}
 	}
 
-	addRequest := entity.ParticipantAddRequest{
+	addRequest := entityDB.ParticipantAddRequest{
 		GamerTag:               p.GameNickname,
 		MessengerPlatform:      s.GetPlatformMessenagerName(),
 		MessengerPlatformId:    messengerID,
@@ -291,7 +291,7 @@ func (s *DiscordSender) FindContactOfParticipant(ctx context.Context, p sender.P
 		log.Printf("db | successfully saved participant %v", cleanNickname)
 	}
 
-	return sender.Participant{
+	return entitySender.Participant{
 		MessenagerID:    addRequest.MessengerPlatformId,
 		MessenagerLogin: addRequest.MessengerPlatformLogin,
 		MessenagerName:  s.GetPlatformMessenagerName(),
@@ -332,7 +332,7 @@ func (dh *discordHandler) Process(s *discordgo.Session) {
 	}
 }
 
-func (dh *discordHandler) getAdapter() (sender.NotificationData, error) {
+func (dh *discordHandler) getAdapter() (entitySender.NotificationData, error) {
 	switch dh.tournamentPlatform {
 	case "startgg":
 		client, err := auth.GetClientStartgg()

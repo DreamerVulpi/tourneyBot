@@ -4,6 +4,10 @@ import (
 	"errors"
 	"log"
 
+	"path/filepath"
+
+	"runtime"
+
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
@@ -73,6 +77,16 @@ type ConfigTournament struct {
 	Logo     Logo         `toml:"logo"`
 	Csv      Csv          `toml:"csv"`
 	Game     ConfigGame   `toml:"game"`
+}
+
+func GetAbsPath(relativeToRoot string) string {
+	// path file
+	_, filename, _, _ := runtime.Caller(0)
+	// ../
+	root := filepath.Join(filepath.Dir(filename), "..")
+
+	absPath := filepath.Join(root, relativeToRoot)
+	return absPath
 }
 
 func LoadConfig(file string) (Config, error) {

@@ -1,4 +1,4 @@
-package usecase
+package sender
 
 import (
 	"context"
@@ -11,8 +11,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dreamervulpi/tourneyBot/internal/sender"
-	"github.com/dreamervulpi/tourneyBot/startgg"
+	"github.com/dreamervulpi/tourneyBot/internal/entity/sender"
+	entityStartgg "github.com/dreamervulpi/tourneyBot/internal/entity/startgg"
+	"github.com/dreamervulpi/tourneyBot/internal/infrastructure/startgg"
 )
 
 type StartggFinalConfig struct {
@@ -39,7 +40,9 @@ func LoadCSV(nameFile string) (map[string]sender.Participant, error) {
 		return nil, errors.New("loadCSV: filename is empty")
 	}
 
-	f, err := os.Open("config/" + nameFile)
+	log.Println(nameFile)
+
+	f, err := os.Open(nameFile)
 	if err != nil {
 		return map[string]sender.Participant{}, fmt.Errorf("loadCSV: open file, %v", err)
 	}
@@ -72,6 +75,10 @@ func LoadCSV(nameFile string) (map[string]sender.Participant, error) {
 	contacts := make(map[string]sender.Participant, len(records)-1)
 	for i := 1; i < len(records); i++ {
 		attendee := records[i]
+
+		if len(attendee) <= idxDiscordColumn || len(attendee) <= idxConnectColumn {
+			continue
+		}
 
 		discordLogin := "N/D"
 		if val := attendee[idxDiscordColumn]; val != "" {
@@ -198,7 +205,7 @@ func (s StartggSetAdapter) GetSetsData(ctx context.Context) ([]sender.SetData, e
 	return setsData, nil
 }
 
-func (s *StartggSetAdapter) ConvertContacts(data startgg.Participant) sender.Participant {
+func (s *StartggSetAdapter) ConvertContacts(data entityStartgg.Participant) sender.Participant {
 	p := sender.Participant{
 		MessenagerLogin: "N/D",
 		GameID:          "N/D",
