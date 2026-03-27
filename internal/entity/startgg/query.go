@@ -1,0 +1,87 @@
+package startgg
+
+const (
+	GetListPhaseGroups = `
+	query getListPhaseGroups($slug: String) {
+		event(slug: $slug) {
+			id
+			name
+			phaseGroups {
+				id
+			}
+		}
+	},
+	`
+	GetTournament = `
+	query getTournament($tourneySlug:String!) {
+		tournament(slug: $tourneySlug) {
+			id
+			name
+			state
+		}
+	}
+	`
+
+	GetPagesCount = `
+	query getPagesCount($phaseGroupId: ID!, $states: [Int]){
+		phaseGroup(id:$phaseGroupId){
+			id
+			sets (
+				filters: {state: $states}
+			){
+				pageInfo{
+					total
+				}
+			}
+		}
+	}
+	`
+	GetPhaseGroupState = `
+	query getPhaseGroupState($phaseGroupId: ID!){
+		phaseGroup(id:$phaseGroupId){
+			id
+			state
+		}
+	}`
+
+	GetPhaseGroupSets = `
+	query getSets($phaseGroupId: ID!, $page:Int!, $perPage:Int!, $states: [Int]){
+		phaseGroup(id:$phaseGroupId){
+			id
+			sets(
+				page: $page
+				perPage: $perPage
+				sortType: STANDARD
+				filters: {state: $states}
+			){
+			pageInfo{
+				total
+			}
+			nodes{
+					id
+					state
+					stream {
+						streamName
+						streamSource
+					}
+					fullRoundText
+        			round
+					slots{
+						entrant{
+							id
+							participants {
+								gamerTag
+								connectedAccounts
+								user {
+									authorizations(types: DISCORD) {
+										externalUsername
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}`
+)
