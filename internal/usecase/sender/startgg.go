@@ -14,6 +14,8 @@ import (
 	"github.com/dreamervulpi/tourneyBot/internal/entity/sender"
 	entityStartgg "github.com/dreamervulpi/tourneyBot/internal/entity/startgg"
 	"github.com/dreamervulpi/tourneyBot/internal/infrastructure/startgg"
+
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 )
 
 type StartggFinalConfig struct {
@@ -32,6 +34,15 @@ type StartggSetAdapter struct {
 	DebugMode bool
 	TestUser  sender.Participant
 	Contacts  map[string]sender.Participant
+}
+
+func (_ StartggSetAdapter) GetMe(tourneyAuth *auth.AuthClient) (auth.Identity, error) {
+	ctx := context.Background()
+	user, err := tourneyAuth.GetStartGGMe(ctx)
+	if err != nil {
+		return auth.Identity{}, err
+	}
+	return *user, nil
 }
 
 // Get discord contacts from CSV file Startgg

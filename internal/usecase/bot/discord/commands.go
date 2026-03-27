@@ -1,11 +1,15 @@
 package discord
 
 import (
+	"context"
+	"log"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/dreamervulpi/tourneyBot/config"
+	usecaseSender "github.com/dreamervulpi/tourneyBot/internal/usecase/sender"
 )
 
-func (s *discordHandler) commands() []*discordgo.ApplicationCommand {
+func (s *DiscordHandler) commands() []*discordgo.ApplicationCommand {
 	dmPermission := false
 	var stages []*discordgo.ApplicationCommandOptionChoice
 	if s.cfg.tournament.Game.Name == "tekken" {
@@ -581,4 +585,60 @@ func choice(list map[string]string) []*discordgo.ApplicationCommandOptionChoice 
 		})
 	}
 	return result
+}
+
+func (dh *DiscordHandler) InitCommands(appID string, session *discordgo.Session, tournament *config.ConfigTournament, cfg *config.Config) ([]*discordgo.ApplicationCommand, error) {
+	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
+	commandHandlers["check"] = dh.viewData
+	commandHandlers["start-sending"] = dh.startSending
+	commandHandlers["stop-sending"] = dh.stopSending
+	commandHandlers["set-event"] = dh.setEvent
+	commandHandlers["edit-rules"] = dh.editRuleMatches
+	commandHandlers["edit-stream-lobby"] = dh.editStreamLobby
+	commandHandlers["edit-logo-tournament"] = dh.editLogoTournament
+
+	var trigger bool
+	discordContacts, err := usecaseSender.LoadCSV(config.GetAbsPath("config/" + tournament.Csv.NameFile))
+	dh.contacts.contacts = discordContacts
+	if err != nil {
+		log.Println("CSV file isn't loaded. Commands: contacts and roles unavailable. Autofill empty data unavailable.")
+		trigger = true
+	} else {
+		err = dh.createTourneyRole(session)
+		if err != nil {
+			return []*discordgo.ApplicationCommand{}, err
+		}
+		err = dh.prepareContacts(context.Background(), session)
+		if err != nil {
+			return []*discordgo.ApplicationCommand{}, err
+		}
+		commandHandlers["contacts"] = dh.viewContacts
+		commandHandlers["roles"] = dh.roles
+	}
+
+	session.AddHandler(func(
+		s *discordgo.Session,
+		i *discordgo.InteractionCreate,
+	) {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
+
+	log.Println("adding commands...")
+	commands := dh.commands()
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, command := range commands {
+		if command.Name == "roles" && trigger || command.Name == "contacts" && trigger {
+			continue
+		}
+		cmd, err := session.ApplicationCommandCreate(appID, cfg.Discord.GuildID, command)
+		log.Printf("%v\n", command.Name)
+		if err != nil {
+			log.Printf("can't create '%v' command: %v\n", command.Name, err)
+		}
+		registeredCommands[i] = cmd
+	}
+
+	return registeredCommands, nil
 }

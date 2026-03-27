@@ -22,7 +22,7 @@ func response(s *discordgo.Session, i *discordgo.InteractionCreate, text string)
 	return nil
 }
 
-func (_ *discordHandler) responseEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed []*discordgo.MessageEmbed) error {
+func (_ *DiscordHandler) responseEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed []*discordgo.MessageEmbed) error {
 	err := s.InteractionRespond(
 		i.Interaction,
 		&discordgo.InteractionResponse{

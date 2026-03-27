@@ -30,7 +30,7 @@ type responseLocale struct {
 	conn           string
 }
 
-func (_ *discordHandler) typeLocale(language string) locale.Lang {
+func (_ *DiscordHandler) typeLocale(language string) locale.Lang {
 	var local locale.Lang
 	switch language {
 	case "Russian":
@@ -41,7 +41,7 @@ func (_ *discordHandler) typeLocale(language string) locale.Lang {
 	return local
 }
 
-func (s *discordHandler) fieldCrossplay(local locale.Lang) string {
+func (s *DiscordHandler) fieldCrossplay(local locale.Lang) string {
 	crossplay := local.InviteMessage.CrossplatformStatusTrue
 	if !s.cfg.rulesMatches.Crossplatform {
 		crossplay = local.InviteMessage.CrossplatformStatusFalse
@@ -49,28 +49,28 @@ func (s *discordHandler) fieldCrossplay(local locale.Lang) string {
 	return crossplay
 }
 
-func (s *discordHandler) fieldStage(local locale.Lang) string {
+func (s *DiscordHandler) fieldStage(local locale.Lang) string {
 	stage := local.InviteMessage.AnyStage
 	if s.cfg.rulesMatches.Stage != "any" {
 		stage = s.cfg.rulesMatches.Stage
 	}
 	return stage
 }
-func (s *discordHandler) fieldLanguage(local locale.Lang) string {
+func (s *DiscordHandler) fieldLanguage(local locale.Lang) string {
 	lang := local.StreamLobbyMessage.AnyLanguage
 	if s.cfg.streamLobby.Language != "any" {
 		lang = local.StreamLobbyMessage.SameLanguage
 	}
 	return lang
 }
-func (s *discordHandler) fieldArea(local locale.Lang) string {
+func (s *DiscordHandler) fieldArea(local locale.Lang) string {
 	area := local.StreamLobbyMessage.AnyArea
 	if s.cfg.streamLobby.Area != "any" {
 		area = local.StreamLobbyMessage.CloseArea
 	}
 	return area
 }
-func (s *discordHandler) fieldConnection(local locale.Lang) string {
+func (s *DiscordHandler) fieldConnection(local locale.Lang) string {
 	conn := local.StreamLobbyMessage.AnyConnection
 	if s.cfg.streamLobby.Conn != "any" {
 		conn = s.cfg.streamLobby.Conn
@@ -136,7 +136,7 @@ func (s *DiscordSender) templateEmbedMsg(title string, fields []*discordgo.Messa
 	}
 }
 
-func (dh *discordHandler) msgStreamLobby(language string, embedColor int) *discordgo.MessageEmbed {
+func (dh *DiscordHandler) msgStreamLobby(language string, embedColor int) *discordgo.MessageEmbed {
 	local := dh.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
@@ -151,7 +151,7 @@ func (dh *discordHandler) msgStreamLobby(language string, embedColor int) *disco
 	return message
 }
 
-func (dh *discordHandler) msgRuleMatches(language string, embedColor int) *discordgo.MessageEmbed {
+func (dh *DiscordHandler) msgRuleMatches(language string, embedColor int) *discordgo.MessageEmbed {
 	local := dh.typeLocale(language)
 
 	fields := []*discordgo.MessageEmbedField{
@@ -167,7 +167,7 @@ func (dh *discordHandler) msgRuleMatches(language string, embedColor int) *disco
 	return message
 }
 
-func (dh *discordHandler) msgViewData(language string) *discordgo.MessageEmbed {
+func (dh *DiscordHandler) msgViewData(language string) *discordgo.MessageEmbed {
 	local := dh.typeLocale(language)
 
 	slug := dh.slug
@@ -220,7 +220,7 @@ func (dh *discordHandler) msgViewData(language string) *discordgo.MessageEmbed {
 	return message
 }
 
-func (s *discordHandler) msgResponse(language string) responseLocale {
+func (s *DiscordHandler) msgResponse(language string) responseLocale {
 	local := s.typeLocale(language)
 
 	var result responseLocale
@@ -249,7 +249,7 @@ func (s *discordHandler) msgResponse(language string) responseLocale {
 	return result
 }
 
-func (s *discordHandler) msgEmbed(title string, fields []*discordgo.MessageEmbedField, color int) *discordgo.MessageEmbed {
+func (s *DiscordHandler) msgEmbed(title string, fields []*discordgo.MessageEmbedField, color int) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Title: title,
 		Color: color,

@@ -2,6 +2,8 @@ package sender
 
 import (
 	"context"
+
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 )
 
 type Participant struct {
@@ -37,4 +39,5 @@ type NotificationData interface {
 	GetSetsData(ctx context.Context) ([]SetData, error)
 	GetPlatformTournamentName() string
 	GetTournamentSlug() string
+	GetMe(tourneyAuth *auth.AuthClient) (auth.Identity, error)
 }

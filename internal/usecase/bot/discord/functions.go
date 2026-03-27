@@ -3,7 +3,6 @@ package discord
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"net/url"
 	"strings"
@@ -15,43 +14,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func (dh *discordHandler) controlRole(s *discordgo.Session, arg string) []*discordgo.MessageEmbed {
-	var embed []*discordgo.MessageEmbed
-	if len(dh.contacts.contacts) != 0 {
-		if arg == "give" {
-			for _, usr := range dh.contacts.contacts {
-				if usr.MessenagerID == "N/D" {
-					continue
-				}
-				err := s.GuildMemberRoleAdd(dh.cfg.guildID, usr.MessenagerID, dh.contacts.tourneyRole.ID)
-				if err != nil {
-					log.Println(err.Error())
-				}
-			}
-		} else {
-			for _, usr := range dh.contacts.contacts {
-				if usr.MessenagerID == "N/D" {
-					continue
-				}
-				err := s.GuildMemberRoleRemove(dh.cfg.guildID, usr.MessenagerID, dh.contacts.tourneyRole.ID)
-				if err != nil {
-					log.Println(err.Error())
-				}
-			}
-		}
-		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
-			{Name: "Success!"},
-		}, 0x2ecc71))
-	} else {
-		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
-			{Name: "Error: Can't work with roles by commands", Value: "CSV file with data isn't loaded. Load file and restart bot."},
-		}, 0xe74c3c))
-	}
-	return embed
-}
-
 // method for start sending messages for players tournament
-func (dh *discordHandler) processSending(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) error {
+func (dh *DiscordHandler) processSending(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) error {
 	// Check values ID server (guildID) and URL to tournament (slug)
 	if dh.cfg.guildID != "" && dh.slug != "" {
 		if err := response(s, i, local.responseMsg.Starting); err != nil {
@@ -63,7 +27,7 @@ func (dh *discordHandler) processSending(s *discordgo.Session, i *discordgo.Inte
 }
 
 // parse URL string for get slug value
-func (s *discordHandler) parseURL(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+func (s *DiscordHandler) parseURL(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
 	embed := []*discordgo.MessageEmbed{}
 
 	// parse string with URL
@@ -92,7 +56,7 @@ func (s *discordHandler) parseURL(i *discordgo.InteractionCreate, local response
 	return embed, fmt.Errorf("%s", local.errorMsg.Input)
 }
 
-func (s *discordHandler) getRuleMatchesData(i *discordgo.InteractionCreate) []*discordgo.MessageEmbed {
+func (s *DiscordHandler) getRuleMatchesData(i *discordgo.InteractionCreate) []*discordgo.MessageEmbed {
 	args := i.ApplicationCommandData().Options
 	s.cfg.rulesMatches.StandardFormat = int(args[0].IntValue())
 	s.cfg.rulesMatches.FinalsFormat = int(args[1].IntValue())
@@ -105,7 +69,7 @@ func (s *discordHandler) getRuleMatchesData(i *discordgo.InteractionCreate) []*d
 	return []*discordgo.MessageEmbed{s.msgRuleMatches(i.Locale.String(), ColorSystem)}
 }
 
-func (s *discordHandler) getStreamLobbyData(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+func (s *DiscordHandler) getStreamLobbyData(i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
 	args := i.ApplicationCommandData().Options
 	embed := []*discordgo.MessageEmbed{}
 
@@ -128,7 +92,7 @@ func (s *discordHandler) getStreamLobbyData(i *discordgo.InteractionCreate, loca
 	return embed, nil
 }
 
-func (s *discordHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, local responseLocale) []*discordgo.MessageEmbed {
+func (s *DiscordHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, local responseLocale) []*discordgo.MessageEmbed {
 	arg := i.ApplicationCommandData().Options[0].StringValue()
 	s.cfg.tournament.Game.Name = arg
 
@@ -137,7 +101,7 @@ func (s *discordHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, l
 	}, ColorSystem)}
 }
 
-func (dh *discordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
+func (dh *DiscordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
 	errRespond := func(embed []*discordgo.MessageEmbed) []*discordgo.MessageEmbed {
 		embed = append(embed, dh.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "", Value: local.errorMsg.NoData},

@@ -18,14 +18,19 @@ import (
 )
 
 type DiscordSender struct {
-	session       *discordgo.Session
-	cfg           params
-	participantUC usecaseDB.Participant
-	adminID       string
-	debugMode     bool
+	session                *discordgo.Session
+	cfg                    params
+	participantUC          usecaseDB.Participant
+	adminIDTourneyPlatform string
+	debugMode              bool
 }
 
 func (s *DiscordSender) logSentMsgToDiscord(success bool, errStr string, set entitySender.SetData, local entityLocale.Lang, gameNickname string) {
+	if s.cfg.debugChannelID == "" {
+		log.Println("logSentMsgToDiscord | skip: debugChannelID is empty")
+		return
+	}
+
 	var logFields []*discordgo.MessageEmbedField
 	var color int
 
@@ -309,7 +314,7 @@ func (s *DiscordSender) cleanDiscordLogin(login string) string {
 	return res
 }
 
-func (dh *discordHandler) Process(s *discordgo.Session) {
+func (dh *DiscordHandler) Process(s *discordgo.Session) {
 	dh.mutex.Lock()
 
 	if dh.cancel != nil {
@@ -332,7 +337,7 @@ func (dh *discordHandler) Process(s *discordgo.Session) {
 	}
 }
 
-func (dh *discordHandler) getAdapter() (entitySender.NotificationData, error) {
+func (dh *DiscordHandler) GetAdapter() (entitySender.NotificationData, error) {
 	switch dh.tournamentPlatform {
 	case "startgg":
 		client, err := auth.GetClientStartgg()
@@ -364,8 +369,8 @@ func (dh *discordHandler) getAdapter() (entitySender.NotificationData, error) {
 	}
 }
 
-func (dh *discordHandler) SendingMessages(ctx context.Context) error {
-	adapter, err := dh.getAdapter()
+func (dh *DiscordHandler) SendingMessages(ctx context.Context) error {
+	adapter, err := dh.GetAdapter()
 	if err != nil {
 		return err
 	}

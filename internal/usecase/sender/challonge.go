@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 
+	"github.com/dreamervulpi/tourneyBot/internal/auth"
 	entityChallonge "github.com/dreamervulpi/tourneyBot/internal/entity/challonge"
 	entitySender "github.com/dreamervulpi/tourneyBot/internal/entity/sender"
 	"github.com/dreamervulpi/tourneyBot/internal/infrastructure/challonge"
@@ -17,6 +18,15 @@ type ChallongeMatchAdapter struct {
 	TournamentSlug string
 	DebugMode      bool
 	TestUser       entitySender.Participant
+}
+
+func (_ ChallongeMatchAdapter) GetMe(tourneyAuth *auth.AuthClient) (auth.Identity, error) {
+	ctx := context.Background()
+	user, err := tourneyAuth.GetChallongeMe(ctx)
+	if err != nil {
+		return auth.Identity{}, err
+	}
+	return *user, nil
 }
 
 func (c ChallongeMatchAdapter) GetPlatformTournamentName() string {
