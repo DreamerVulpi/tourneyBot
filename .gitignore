@@ -12,4 +12,4 @@ token_challonge.json
 .env
 docker-compose.yaml
 Makefile
-.log
+*.log

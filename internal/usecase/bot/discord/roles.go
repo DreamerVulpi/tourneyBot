@@ -30,13 +30,13 @@ func (dh *DiscordHandler) controlRole(s *discordgo.Session, arg string) []*disco
 				}
 			}
 		}
-		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed("Roles", []*discordgo.MessageEmbedField{
 			{Name: "Success!"},
-		}, 0x2ecc71))
+		}, 0x2ecc71, &dh.cfg))
 	} else {
-		embed = append(embed, dh.msgEmbed("Roles", []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed("Roles", []*discordgo.MessageEmbedField{
 			{Name: "Error: Can't work with roles by commands", Value: "CSV file with data isn't loaded. Load file and restart bot."},
-		}, 0xe74c3c))
+		}, 0xe74c3c, &dh.cfg))
 	}
 	return embed
 }
