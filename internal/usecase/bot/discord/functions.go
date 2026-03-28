@@ -18,7 +18,7 @@ import (
 func (dh *DiscordHandler) processSending(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) error {
 	// Check values ID server (guildID) and URL to tournament (slug)
 	if dh.cfg.guildID != "" && dh.slug != "" {
-		if err := response(s, i, local.responseMsg.Starting); err != nil {
+		if err := responseMsg(s, i, local.responseMsg.Starting); err != nil {
 			return err
 		}
 		go dh.Process(s)
@@ -33,9 +33,9 @@ func (s *DiscordHandler) parseURL(i *discordgo.InteractionCreate, local response
 	// parse string with URL
 	u, err := url.Parse(i.ApplicationCommandData().Options[0].StringValue())
 	if err != nil {
-		embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed("Error", []*discordgo.MessageEmbedField{
 			{Name: "**Slug**", Value: local.errorMsg.Input},
-		}, 0xe74c3c)) //
+		}, 0xe74c3c, &s.cfg)) //
 		return embed, err
 	}
 	// separate URL to parts
@@ -44,15 +44,15 @@ func (s *DiscordHandler) parseURL(i *discordgo.InteractionCreate, local response
 	// check URL on key words
 	if len(arg) != 0 && arg[1] == "tournament" && arg[3] == "event" {
 		s.slug = arg[1] + "/" + arg[2] + "/" + arg[3] + "/" + arg[4]
-		embed = append(embed, s.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "**Slug**", Value: s.slug},
-		}, ColorSuccess))
+		}, ColorSuccess, &s.cfg))
 		return embed, nil
 	}
 
-	embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+	embed = append(embed, msgEmbed("Error", []*discordgo.MessageEmbedField{
 		{Name: "**Slug**", Value: local.errorMsg.Input},
-	}, ColorError))
+	}, ColorError, &s.cfg))
 	return embed, fmt.Errorf("%s", local.errorMsg.Input)
 }
 
@@ -75,9 +75,9 @@ func (s *DiscordHandler) getStreamLobbyData(i *discordgo.InteractionCreate, loca
 
 	code := regexp.MustCompile(`[0-9]+`).FindAllString(args[4].StringValue(), -1)[0]
 	if len(code) != 4 {
-		embed = append(embed, s.msgEmbed("Error", []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed("Error", []*discordgo.MessageEmbedField{
 			{Name: local.vdMsg.MessageStreamHeader, Value: local.errorMsg.Input},
-		}, ColorError))
+		}, ColorError, &s.cfg))
 		return embed, fmt.Errorf("no 4 numbers in field")
 	}
 
@@ -96,16 +96,16 @@ func (s *DiscordHandler) getLogoTournamnentURL(i *discordgo.InteractionCreate, l
 	arg := i.ApplicationCommandData().Options[0].StringValue()
 	s.cfg.tournament.Game.Name = arg
 
-	return []*discordgo.MessageEmbed{s.msgEmbed(local.vdMsg.LogoTournament, []*discordgo.MessageEmbedField{
+	return []*discordgo.MessageEmbed{msgEmbed(local.vdMsg.LogoTournament, []*discordgo.MessageEmbedField{
 		{Name: "**Url**", Value: fmt.Sprintf("%v", s.cfg.tournament.Game.Name)},
-	}, ColorSystem)}
+	}, ColorSystem, &s.cfg)}
 }
 
 func (dh *DiscordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordgo.InteractionCreate, local responseLocale) ([]*discordgo.MessageEmbed, error) {
 	errRespond := func(embed []*discordgo.MessageEmbed) []*discordgo.MessageEmbed {
-		embed = append(embed, dh.msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
+		embed = append(embed, msgEmbed(local.vdMsg.Title, []*discordgo.MessageEmbedField{
 			{Name: "", Value: local.errorMsg.NoData},
-		}, ColorSystem))
+		}, ColorSystem, &dh.cfg))
 
 		return embed
 	}
@@ -122,7 +122,7 @@ func (dh *DiscordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordg
 	arg := i.ApplicationCommandData().Options[0].StringValue()
 	switch strings.ToLower(arg) {
 	case "any", "все":
-		if err := response(s, i, local.responseMsg.InProcess); err != nil {
+		if err := responseMsg(s, i, local.responseMsg.InProcess); err != nil {
 			return nil, err
 		}
 		for _, embedContact := range dh.contacts.embedContacts {
@@ -141,7 +141,7 @@ func (dh *DiscordHandler) readCommandEmbedJSON(s *discordgo.Session, i *discordg
 						Name:  field.Name,
 						Value: field.Value,
 					})
-					embed = append(embed, dh.msgEmbed(local.vdMsg.Title, fields, ColorSystem))
+					embed = append(embed, msgEmbed(local.vdMsg.Title, fields, ColorSystem, &dh.cfg))
 					return embed, nil
 				}
 			}

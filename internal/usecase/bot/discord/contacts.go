@@ -99,13 +99,13 @@ func (dh *DiscordHandler) prepareContacts(ctx context.Context, s *discordgo.Sess
 				fields = append(fields, field)
 
 				if len(fields) == 25 {
-					sliceMessages = append(sliceMessages, dh.msgEmbed("", fields, ColorSystem))
+					sliceMessages = append(sliceMessages, msgEmbed("", fields, ColorSystem, &dh.cfg))
 					fields = []*discordgo.MessageEmbedField{}
 				}
 			}
 
 			if len(fields) > 0 {
-				sliceMessages = append(sliceMessages, dh.msgEmbed("", fields, ColorSystem))
+				sliceMessages = append(sliceMessages, msgEmbed("", fields, ColorSystem, &dh.cfg))
 			}
 
 			dh.contacts.embedContacts = sliceMessages
